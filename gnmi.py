@@ -131,6 +131,10 @@ def parse_args():
     # group.add_argument("--ciphers", help="override environment "GRPC_SSL_CIPHER_SUITES"")
     # group.add_argument("--alt-name", help="subjectAltName/CN override for server host validation")
     # group.add_argument("--no-host-check",  action="store_true", help="disable server host validation")
+    
+    group = parser.add_argument_group()
+    group.add_argument("--origin", default=None, type=str,
+                       help="ex. (--origin eos_native)")
 
     group = parser.add_argument_group()
     group.add_argument("--interval", default=10, type=int,
@@ -161,7 +165,8 @@ def main():
 
     args = parse_args()
     target = args.target  # "192.168.59.14:6030"
-    origin = "eos_native"
+    #origin = "eos_native"
+    origin = args.origin
 
     paths = args.paths
     username = args.username
