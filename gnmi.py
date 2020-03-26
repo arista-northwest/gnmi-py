@@ -15,7 +15,7 @@ import grpc
 import gnmi_pb2 as gnmi
 import gnmi_pb2_grpc
 
-__version__ = "0.1.1"
+__version__ = "0.1.2"
 
 _RE_PATH_COMPONENT = re.compile(r'''
 ^
@@ -36,7 +36,7 @@ def _parse_path(path):
         names = []
     else:
         names = re.split(r"(?<!\\)/", path)
-        
+
     elems = []
     for name in names:
         match = _RE_PATH_COMPONENT.search(name)
@@ -49,7 +49,7 @@ def _parse_path(path):
                 val = x.split("=")[-1]
                 val = re.sub(r"\\", "", val)
                 tmp_key[x.split("=")[0]] = val
-            
+
             pname = match.group("pname")
             elem = gnmi.PathElem(name=pname, key=tmp_key)
             elems.append(elem)
@@ -67,8 +67,33 @@ def escape_string(s, esc):
         res += c
     return res
 
+# func StrPath(path *pb.Path) string {
+# 	if path == nil {
+# 		return "/"
+# 	} else if len(path.Elem) != 0 {
+# 		return strPathV04(path)
+# 	} else if len(path.Element) != 0 {
+# 		return strPathV03(path)
+# 	}
+# 	return "/"
+# }
+
 
 def str_path(path):
+    if not path:
+        return "/"
+    elif len(path.elem) > 0:
+        return str_path_v4(path)
+    elif len(path.element) > 0:
+        return str_path_v3(path)
+    return "/"
+
+
+def str_path_v3(path):
+    return "/" + "/".join(path.element)
+
+
+def str_path_v4(path):
     p = ""
     for elem in path.elem:
         p += "/" + escape_string(elem.name, "/")
@@ -78,8 +103,32 @@ def str_path(path):
             p += "[" + k + "=" + v + "]"
     return p
 
+def extract_value(update):
 
-def extract_value(value):
+    val = None
+
+    if not update:
+        return val
+
+    try:
+        val = extract_value_v4(update.val)
+    except ValueError:
+        val = extract_value_v3(update.value)
+
+    return val
+
+
+def extract_value_v3(value):
+
+    if value.type in (gnmi.JSON_IETF, gnmi.JSON):
+        return json.loads(value.value)
+    elif value.type in (gnmi.BYTES, gnmi.PROTO):
+        return value.value
+    elif value.type == gnmi.ASCII:
+        return str(value.value)
+
+
+def extract_value_v4(value):
     if value.HasField("any_val"):
         return value.any_val
     elif value.HasField("ascii_val"):
@@ -110,7 +159,7 @@ def extract_value(value):
     elif value.HasField("uint_val"):
         return value.uint_val
     else:
-       raise ValueError("Unhandled type of value %s", str(value))
+        raise ValueError("Unhandled type of value %s", str(value))
 
 
 def parse_args():
@@ -134,13 +183,13 @@ def parse_args():
     # group.add_argument("--ciphers", help="override environment "GRPC_SSL_CIPHER_SUITES"")
     # group.add_argument("--alt-name", help="subjectAltName/CN override for server host validation")
     # group.add_argument("--no-host-check",  action="store_true", help="disable server host validation")
-    
+
     group = parser.add_argument_group()
     group.add_argument("--origin", default=None, type=str,
                        help="ex. (--origin eos_native)")
 
     group = parser.add_argument_group()
-    group.add_argument("--interval", default=10, type=int,
+    group.add_argument("--interval", default=None, type=int,
                        help="sample interval (default: 10s)")
     group.add_argument("--timeout", type=int,
                        help="subscription duration in seconds (default: none)")
@@ -164,6 +213,7 @@ def parse_args():
 
     return parser.parse_args()
 
+
 def main():
 
     args = parse_args()
@@ -177,12 +227,15 @@ def main():
     timeout = args.timeout
 
     suppress = args.suppress
-    interval = args.interval * 1000000000
+    interval = None
+    if args.interval is not None:
+        interval = args.interval * 1000000000
+
     heartbeat = args.heartbeat
     prefix = args.prefix
     aggregate = args.aggregate
     use_alias = args.use_alias
-    
+
     submode = None
     if args.submode == "target-defined":
         submode = gnmi.TARGET_DEFINED
@@ -192,7 +245,7 @@ def main():
         submode = gnmi.SAMPLE
     else:
         raise ValueError("Invalid subscription mode %s" % str(args.submode))
-    
+
     encoding = None
     if args.encoding == "json":
         encoding = gnmi.JSON_IETF
@@ -206,7 +259,7 @@ def main():
         encoding = gnmi.JSON_IETF
     else:
         raise ValueError("Invalid encoding %s" % str(args.encoding))
-    
+
     mode = None
     if args.mode == "stream":
         mode = 0
@@ -216,7 +269,7 @@ def main():
         mode = 2
     else:
         raise ValueError("Invalud mode %s" % str(args.mode))
-    
+
     qos = None
     if args.qos is not None:
         qos = gnmi.QOSMarking(marking=0)
@@ -258,9 +311,9 @@ def main():
             elif response.HasField("update"):
                 prefix = str_path(response.update.prefix)
                 for update in response.update.update:
-                    
+
                     path = prefix + str_path(update.path)
-                    value = extract_value(update.val)
+                    value = extract_value(update)
 
                     print("%s = %s" % (path, str(value)))
             else:
