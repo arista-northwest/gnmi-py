@@ -24,7 +24,7 @@ _RE_PATH_COMPONENT = re.compile(r'''
 =
 (?P<value>.*)
 \])?$
-''', re.VERBOSE)
+    ''', re.VERBOSE)
 
 _PROG_NAME = "gnmi-py"
 
@@ -110,7 +110,7 @@ def extract_value(value):
     elif value.HasField("uint_val"):
         return value.uint_val
     else:
-        raise ValueError("unhandled type of value %s", str(value))
+       raise ValueError("Unhandled type of value %s", str(value))
 
 
 def parse_args():
@@ -272,8 +272,8 @@ def main():
     except grpc.RpcError as err:
         print("grpc.RpcError received:\n%s" % err)
 
-    except Exception as err:
-        print(err)
+    # except Exception as err:
+    #     print(err)
 
 
 if __name__ == "__main__":
