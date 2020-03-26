@@ -101,7 +101,9 @@ def str_path_v4(path):
         for k, v in six.iteritems(elem.key):
             v = escape_string(v, "]")
             p += "[" + k + "=" + v + "]"
+
     return p
+
 
 def extract_value(update):
 
@@ -310,8 +312,11 @@ def main():
                       " received\n" + str(response.error.message))
             elif response.HasField("update"):
                 prefix = str_path(response.update.prefix)
-                for update in response.update.update:
 
+                if prefix == "/":
+                    prefix = ""
+
+                for update in response.update.update:
                     path = prefix + str_path(update.path)
                     value = extract_value(update)
 
