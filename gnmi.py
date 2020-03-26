@@ -25,20 +25,18 @@ _RE_PATH_COMPONENT = re.compile(r'''
 (?P<value>.*)
 \])?$
 ''', re.VERBOSE)
-print(_RE_PATH_COMPONENT)
 
 _PROG_NAME = "gnmi-py"
 
 
 def _parse_path(path):
-    #print(path)
     names = []
     path = path.strip().strip("/")
     if not path or path == "/":
         names = []
     else:
         names = re.split(r"(?<!\\)/", path)
-    print(names)
+        
     elems = []
     for name in names:
         match = _RE_PATH_COMPONENT.search(name)
