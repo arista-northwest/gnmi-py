@@ -15,7 +15,7 @@ import grpc
 import gnmi_pb2 as gnmi
 import gnmi_pb2_grpc
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 _RE_PATH_COMPONENT = re.compile(r'''
 ^
