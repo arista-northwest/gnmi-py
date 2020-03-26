@@ -20,11 +20,12 @@ __version__ = "0.1.0"
 _RE_PATH_COMPONENT = re.compile(r'''
 ^
 (?P<pname>[^[]+)
-(\[(?P<key>[a-zA-Z0-9\-]+)
+(\[(?P<key>[a-zA-Z0-9\-\/\.]+)
 =
 (?P<value>.*)
 \])?$
 ''', re.VERBOSE)
+print(_RE_PATH_COMPONENT)
 
 _PROG_NAME = "gnmi-py"
 
@@ -32,12 +33,12 @@ _PROG_NAME = "gnmi-py"
 def _parse_path(path):
     #print(path)
     names = []
-
+    path = path.strip().strip("/")
     if not path or path == "/":
         names = []
     else:
-        names = path.strip().strip("/").split("/")
-
+        names = re.split(r"(?<!\\)/", path)
+    print(names)
     elems = []
     for name in names:
         match = _RE_PATH_COMPONENT.search(name)
@@ -47,8 +48,12 @@ def _parse_path(path):
         if match.group("key") is not None:
             tmp_key = {}
             for x in re.findall(r"\[([^]]*)\]", name):
-                tmp_key[x.split("=")[0]] = x.split("=")[-1]
-            elem = gnmi.PathElem(name=match.group("pname"), key=tmp_key)
+                val = x.split("=")[-1]
+                val = re.sub(r"\\", "", val)
+                tmp_key[x.split("=")[0]] = val
+            
+            pname = match.group("pname")
+            elem = gnmi.PathElem(name=pname, key=tmp_key)
             elems.append(elem)
         else:
             elems.append(gnmi.PathElem(name=name, key={}))
