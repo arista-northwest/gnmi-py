@@ -67,17 +67,6 @@ def escape_string(s, esc):
         res += c
     return res
 
-# func StrPath(path *pb.Path) string {
-# 	if path == nil {
-# 		return "/"
-# 	} else if len(path.Elem) != 0 {
-# 		return strPathV04(path)
-# 	} else if len(path.Element) != 0 {
-# 		return strPathV03(path)
-# 	}
-# 	return "/"
-# }
-
 
 def str_path(path):
     if not path:
@@ -119,11 +108,13 @@ def extract_value(update):
 
     return val
 
+def decode_bytes(bites, encoding='utf-8'):
+    return bites.decode(encoding)
 
 def extract_value_v3(value):
 
     if value.type in (gnmi.JSON_IETF, gnmi.JSON):
-        return json.loads(value.value)
+        return json.loads(decode_bytes(value.value))
     elif value.type in (gnmi.BYTES, gnmi.PROTO):
         return value.value
     elif value.type == gnmi.ASCII:
@@ -146,9 +137,9 @@ def extract_value_v4(value):
     elif value.HasField("int_val"):
         return value.int_val
     elif value.HasField("json_ietf_val"):
-        return json.loads(value.json_ietf_val)
+        return json.loads(decode_bytes(value.json_ietf_val))
     elif value.HasField("json_val"):
-        return json.loads(value.json_val)
+        return json.loads(decode_bytes(value.json_val))
     elif value.HasField("leaflist_val"):
         lst = []
         for elem in value.leaflist_val.element:
