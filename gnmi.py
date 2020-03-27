@@ -1,21 +1,20 @@
 #!/usr/bin/env python3
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import argparse
 import json
 import re
 import os
 import sys
 
-import six
 import grpc
 import gnmi_pb2 as gnmi
 import gnmi_pb2_grpc
 
-__version__ = "0.1.2"
+__version__ = "0.1.3"
+
+if sys.version_info < (3, 5):
+    # see: https://devguide.python.org/devcycle/
+    raise ValueError("Python 3.5+ is required")
 
 _RE_PATH_COMPONENT = re.compile(r'''
 ^
@@ -86,8 +85,7 @@ def str_path_v4(path):
     p = ""
     for elem in path.elem:
         p += "/" + escape_string(elem.name, "/")
-        # if len(elm.key) > 0:
-        for k, v in six.iteritems(elem.key):
+        for k, v in elem.key.items():
             v = escape_string(v, "]")
             p += "[" + k + "=" + v + "]"
 
@@ -108,8 +106,13 @@ def extract_value(update):
 
     return val
 
+
 def decode_bytes(bites, encoding='utf-8'):
-    return bites.decode(encoding)
+    # python 3.6+ does this automatically
+    if sys.version_info < (3, 6):
+        return bites.decode(encoding)
+    return bites
+
 
 def extract_value_v3(value):
 
