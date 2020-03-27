@@ -150,10 +150,10 @@ def extract_value_v4(value):
     elif value.HasField("json_val"):
         return json.loads(value.json_val)
     elif value.HasField("leaflist_val"):
-        res = []
+        lst = []
         for elem in value.leaflist_val.element:
-            res.append(extract_value_v4(elem))
-        return res
+            lst.append(extract_value_v4(elem))
+        return lst
     elif value.HasField("proto_bytes"):
         return value.proto_bytes
     elif value.HasField("string_val"):
@@ -186,7 +186,7 @@ def parse_args():
                        help="sample interval (default: 10s)")
     group.add_argument("--timeout", type=int,
                        help="subscription duration in seconds (default: none)")
-    group.add_argument("--heartbeat", type=int,
+    group.add_argument("--heartbeat", default=None, type=int,
                        help="heartbeat interval (default: none)")
     group.add_argument("--aggregate", action="store_true",
                        help="allow aggregation")
@@ -200,7 +200,7 @@ def parse_args():
                        help="[json, bytes, proto, ascii, json-ietf]")
     group.add_argument("--qos", default=0, type=int,
                        help="[JSON, BYTES, PROTO, ASCII, JSON_IETF]")
-    group.add_argument("--use-alias",  action="store_true", help="use alias")
+    group.add_argument("--use-alias", action="store_true", help="use aliases")
     group.add_argument("--prefix", default=None,
                        help="gRPC path prefix (default: none)")
 
@@ -210,8 +210,7 @@ def parse_args():
 def main():
 
     args = parse_args()
-    target = args.target  # "192.168.59.14:6030"
-    #origin = "eos_native"
+    target = args.target
     origin = args.origin
 
     paths = args.paths
