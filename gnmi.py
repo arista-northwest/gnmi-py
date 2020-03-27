@@ -152,7 +152,7 @@ def extract_value_v4(value):
     elif value.HasField("leaflist_val"):
         res = []
         for elem in value.leaflist_val.element:
-            res.append(extract_value(elem))
+            res.append(extract_value_v4(elem))
         return res
     elif value.HasField("proto_bytes"):
         return value.proto_bytes
