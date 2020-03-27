@@ -173,18 +173,9 @@ def parse_args():
                         help="gNMI gRPC server (default: localhost:6030)")
     parser.add_argument("paths", nargs="*", default=["/"])
 
-    # group = parser.add_mutually_exclusive_group()
-    # group.add_argument("-q", "--quiet",   action="store_true")
-    # group.add_argument("-v", "--verbose", action="count")
-
     group = parser.add_argument_group()
     group.add_argument("-u", "--username", default="admin")
     group.add_argument("-p", "--password", default="")
-    # group.add_argument("--cert", metavar="<filename>",  help="CA root certificate")
-    # group.add_argument("--tls", action="store_true", help="enable TLS security")
-    # group.add_argument("--ciphers", help="override environment "GRPC_SSL_CIPHER_SUITES"")
-    # group.add_argument("--alt-name", help="subjectAltName/CN override for server host validation")
-    # group.add_argument("--no-host-check",  action="store_true", help="disable server host validation")
 
     group = parser.add_argument_group()
     group.add_argument("--origin", default=None, type=str,
@@ -329,9 +320,6 @@ def main():
 
     except grpc.RpcError as err:
         print("grpc.RpcError received:\n%s" % err)
-
-    # except Exception as err:
-    #     print(err)
 
 
 if __name__ == "__main__":
