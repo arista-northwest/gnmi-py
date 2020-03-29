@@ -23,7 +23,7 @@ _RE_PATH_COMPONENT = re.compile(r'''
 =
 (?P<value>.*)
 \])?$
-    ''', re.VERBOSE)
+''', re.VERBOSE)
 
 _PROG_NAME = "gnmi-py"
 
@@ -34,7 +34,8 @@ def _parse_path(path):
     if not path or path == "/":
         names = []
     else:
-        names = re.split(r"(?<!\\)/", path)
+        # split path on unescaped forward slashes, then remove the esacape character
+        names = [re.sub(r"\\", "", n) for n in re.split(r"(?<!\\)/", path)]
 
     elems = []
     for name in names:
@@ -46,16 +47,40 @@ def _parse_path(path):
             tmp_key = {}
             for x in re.findall(r"\[([^]]*)\]", name):
                 val = x.split("=")[-1]
-                val = re.sub(r"\\", "", val)
                 tmp_key[x.split("=")[0]] = val
 
             pname = match.group("pname")
             elem = gnmi.PathElem(name=pname, key=tmp_key)
             elems.append(elem)
         else:
+            name = re.sub(r"\\", "", name)
             elems.append(gnmi.PathElem(name=name, key={}))
 
     return gnmi.Path(elem=elems)
+
+
+def parse_duration(duration):
+
+    multipliers = {
+        "n": 1,
+        "u": 1000,
+        "m": 1000000,
+        "ms": 1000000,
+        "s": 1000000000
+    }
+
+    if duration is None:
+        return None
+
+    m = re.match(r'(?P<value>\d+)(?P<unit>[a-z]+)?', duration)
+
+    val = int(m.group("value"))
+    unit = m.group("unit") or "m"
+
+    if unit not in multipliers:
+        raise ValueError("Invalid unit in duration: %s" % duration)
+
+    return val * multipliers[unit]
 
 
 def escape_string(s, esc):
@@ -115,7 +140,6 @@ def decode_bytes(bites, encoding='utf-8'):
 
 
 def extract_value_v3(value):
-
     if value.type in (gnmi.JSON_IETF, gnmi.JSON):
         return json.loads(decode_bytes(value.value))
     elif value.type in (gnmi.BYTES, gnmi.PROTO):
@@ -176,12 +200,12 @@ def parse_args():
                        help="ex. (--origin eos_native)")
 
     group = parser.add_argument_group()
-    group.add_argument("--interval", default=None, type=int,
-                       help="sample interval (default: 10s)")
-    group.add_argument("--timeout", type=int,
-                       help="subscription duration in seconds (default: none)")
-    group.add_argument("--heartbeat", default=None, type=int,
-                       help="heartbeat interval (default: none)")
+    group.add_argument("--interval", default="10s", type=str,
+                       help="sample interval in milliseconds (default: 10s)")
+    group.add_argument("--timeout", default=None, type=str,
+                       help="subscription duration in milliseconds (default: None)")
+    group.add_argument("--heartbeat", default=None, type=str,
+                       help="heartbeat interval in milliseconds (default: None)")
     group.add_argument("--aggregate", action="store_true",
                        help="allow aggregation")
     group.add_argument("--suppress", action="store_true",
@@ -214,10 +238,10 @@ def main():
 
     suppress = args.suppress
     interval = None
-    if args.interval is not None:
-        interval = args.interval * 1000000000
 
-    heartbeat = args.heartbeat
+    interval = parse_duration(args.interval)
+    heartbeat = parse_duration(args.heartbeat)
+
     prefix = args.prefix
     aggregate = args.aggregate
     use_alias = args.use_alias
