@@ -10,7 +10,7 @@ import grpc
 import gnmi_pb2 as gnmi
 import gnmi_pb2_grpc
 
-__version__ = "0.1.3"
+__version__ = "0.1.4"
 
 if sys.version_info < (3, 5):
     # see: https://devguide.python.org/devcycle/
