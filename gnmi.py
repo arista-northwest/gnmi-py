@@ -1,25 +1,30 @@
 #!/usr/bin/env python3
+"""
+Python3 CLI utility for interacting with Network Elements using gNMI.
 
+Based on: https://github.com/google/gnxi/blob/master/gnmi_cli_py/py_gnmicli.py
+
+Current supported gNMI features:
+
+- Subscribe
+"""
 import argparse
 import json
 import re
-import os
 import sys
 
 import grpc
+import google.protobuf
 import gnmi_pb2 as gnmi
 import gnmi_pb2_grpc
 
-import google.protobuf
 
-__version__ = "0.1.5"
+__version__ = "0.1.6"
 
 if sys.version_info < (3, 5):
     # see: https://devguide.python.org/devcycle/
     raise ValueError("Python 3.5+ is required")
 
-_PB_VERSION = google.protobuf.__version__
-_GRPC_VERSION = grpc.__version__
 _PROG_NAME = "gnmi-py"
 
 _RE_PATH_COMPONENT = re.compile(r'''
@@ -32,7 +37,6 @@ _RE_PATH_COMPONENT = re.compile(r'''
 ''', re.VERBOSE)
 
 
-
 def decode_bytes(bites, encoding='utf-8'):
     # python 3.6+ does this automatically
     if sys.version_info < (3, 6):
@@ -40,13 +44,13 @@ def decode_bytes(bites, encoding='utf-8'):
     return bites
 
 
-def escape_string(s, esc):
-    res = ""
-    for c in s:
-        if c == esc or c == "\\":
-            res += "\\"
-        res += c
-    return res
+def escape_string(string, escape):
+    result = ""
+    for character in string:
+        if character in (escape, "\\"):
+            result += "\\"
+        result += character
+    return result
 
 
 def extract_value(update):
@@ -65,53 +69,64 @@ def extract_value(update):
 
 
 def extract_value_v3(value):
+    val = None
     if value.type in (gnmi.JSON_IETF, gnmi.JSON):
-        return json.loads(decode_bytes(value.value))
+        val = json.loads(decode_bytes(value.value))
     elif value.type in (gnmi.BYTES, gnmi.PROTO):
-        return value.value
+        val = value.value
     elif value.type == gnmi.ASCII:
-        return str(value.value)
-
+        val = str(value.value)
+    else:
+        raise ValueError("Unhandled type of value %s" % str(value))
+    return val
 
 def extract_value_v4(value):
+    val = None
     if value.HasField("any_val"):
-        return value.any_val
+        val = value.any_val
     elif value.HasField("ascii_val"):
-        return value.ascii_val
+        val = value.ascii_val
     elif value.HasField("bool_val"):
-        return value.bool_val
+        val = value.bool_val
     elif value.HasField("bytes_val"):
-        return value.bytes_val
+        val = value.bytes_val
     elif value.HasField("decimal_val"):
-        return value.decimal_val
+        val = value.decimal_val
     elif value.HasField("float_val"):
-        return value.float_val
+        val = value.float_val
     elif value.HasField("int_val"):
-        return value.int_val
+        val = value.int_val
     elif value.HasField("json_ietf_val"):
-        return json.loads(decode_bytes(value.json_ietf_val))
+        val = json.loads(decode_bytes(value.json_ietf_val))
     elif value.HasField("json_val"):
-        return json.loads(decode_bytes(value.json_val))
+        val = json.loads(decode_bytes(value.json_val))
     elif value.HasField("leaflist_val"):
         lst = []
         for elem in value.leaflist_val.element:
             lst.append(extract_value_v4(elem))
-        return lst
+        val = lst
     elif value.HasField("proto_bytes"):
-        return value.proto_bytes
+        val = value.proto_bytes
     elif value.HasField("string_val"):
-        return value.string_val
+        val = value.string_val
     elif value.HasField("uint_val"):
-        return value.uint_val
+        val = value.uint_val
     else:
-        raise ValueError("Unhandled type of value %s", str(value))
+        raise ValueError("Unhandled type of value %s" % str(value))
+
+    return val
+
+def format_version():
+    elems = (_PROG_NAME, __version__,
+             google.protobuf.__version__, grpc.__version__)
+    return "%s %s [protobuf %s, grpcio %s]" % elems
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--version", action="version",
-                        version="%s %s [protobuf %s, grpcio %s]" % (_PROG_NAME, __version__, _PB_VERSION, _GRPC_VERSION))
+                        version=format_version())
     parser.add_argument("target", default="127.0.0.1:6030",
                         help="gNMI gRPC server (default: localhost:6030)")
     parser.add_argument("paths", nargs="*", default=["/"])
@@ -163,10 +178,10 @@ def parse_duration(duration):
     if duration is None:
         return None
 
-    m = re.match(r'(?P<value>\d+)(?P<unit>[a-z]+)?', duration)
+    match = re.match(r'(?P<value>\d+)(?P<unit>[a-z]+)?', duration)
 
-    val = int(m.group("value"))
-    unit = m.group("unit") or "m"
+    val = int(match.group("value"))
+    unit = match.group("unit") or "m"
 
     if unit not in multipliers:
         raise ValueError("Invalid unit in duration: %s" % duration)
@@ -191,9 +206,9 @@ def parse_path(path):
 
         if match.group("key") is not None:
             tmp_key = {}
-            for x in re.findall(r"\[([^]]*)\]", name):
-                val = x.split("=")[-1]
-                tmp_key[x.split("=")[0]] = val
+            for keyval in re.findall(r"\[([^]]*)\]", name):
+                val = keyval.split("=")[-1]
+                tmp_key[keyval.split("=")[0]] = val
 
             pname = match.group("pname")
             elem = gnmi.PathElem(name=pname, key=tmp_key)
@@ -206,13 +221,15 @@ def parse_path(path):
 
 
 def str_path(path):
+    strpath = "/"
+
     if not path:
-        return "/"
+        pass
     elif len(path.elem) > 0:
-        return str_path_v4(path)
+        strpath = str_path_v4(path)
     elif len(path.element) > 0:
-        return str_path_v3(path)
-    return "/"
+        strpath = str_path_v3(path)
+    return strpath
 
 
 def str_path_v3(path):
@@ -220,15 +237,17 @@ def str_path_v3(path):
 
 
 def str_path_v4(path):
-    p = ""
+    strpath = ""
     for elem in path.elem:
-        p += "/" + escape_string(elem.name, "/")
-        for k, v in elem.key.items():
-            v = escape_string(v, "]")
-            p += "[" + k + "=" + v + "]"
+        strpath += "/" + escape_string(elem.name, "/")
+        for key, val in elem.key.items():
+            val = escape_string(val, "]")
+            strpath += "[" + key + "=" + val + "]"
 
-    return p
+    return strpath
 
+def do_subscribe(stub):
+    pass
 
 def main():
 
@@ -315,7 +334,7 @@ def main():
 
     try:
         responses = stub.Subscribe(_sr(), timeout, metadata=[
-                                   ("username", username), ("password", password)])
+            ("username", username), ("password", password)])
         for response in responses:
 
             if response.HasField("sync_response"):
