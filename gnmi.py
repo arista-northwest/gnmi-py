@@ -32,59 +32,12 @@ _RE_PATH_COMPONENT = re.compile(r'''
 ''', re.VERBOSE)
 
 
-def _parse_path(path):
-    names = []
-    path = path.strip().strip("/")
-    if not path or path == "/":
-        names = []
-    else:
-        # split path on unescaped forward slashes, then remove the esacape character
-        names = [re.sub(r"\\", "", n) for n in re.split(r"(?<!\\)/", path)]
 
-    elems = []
-    for name in names:
-        match = _RE_PATH_COMPONENT.search(name)
-        if not match:
-            raise ValueError("path component parse error: %s" % name)
-
-        if match.group("key") is not None:
-            tmp_key = {}
-            for x in re.findall(r"\[([^]]*)\]", name):
-                val = x.split("=")[-1]
-                tmp_key[x.split("=")[0]] = val
-
-            pname = match.group("pname")
-            elem = gnmi.PathElem(name=pname, key=tmp_key)
-            elems.append(elem)
-        else:
-            name = re.sub(r"\\", "", name)
-            elems.append(gnmi.PathElem(name=name, key={}))
-
-    return gnmi.Path(elem=elems)
-
-
-def parse_duration(duration):
-
-    multipliers = {
-        "n": 1,
-        "u": 1000,
-        "m": 1000000,
-        "ms": 1000000,
-        "s": 1000000000
-    }
-
-    if duration is None:
-        return None
-
-    m = re.match(r'(?P<value>\d+)(?P<unit>[a-z]+)?', duration)
-
-    val = int(m.group("value"))
-    unit = m.group("unit") or "m"
-
-    if unit not in multipliers:
-        raise ValueError("Invalid unit in duration: %s" % duration)
-
-    return val * multipliers[unit]
+def decode_bytes(bites, encoding='utf-8'):
+    # python 3.6+ does this automatically
+    if sys.version_info < (3, 6):
+        return bites.decode(encoding)
+    return bites
 
 
 def escape_string(s, esc):
@@ -94,31 +47,6 @@ def escape_string(s, esc):
             res += "\\"
         res += c
     return res
-
-
-def str_path(path):
-    if not path:
-        return "/"
-    elif len(path.elem) > 0:
-        return str_path_v4(path)
-    elif len(path.element) > 0:
-        return str_path_v3(path)
-    return "/"
-
-
-def str_path_v3(path):
-    return "/" + "/".join(path.element)
-
-
-def str_path_v4(path):
-    p = ""
-    for elem in path.elem:
-        p += "/" + escape_string(elem.name, "/")
-        for k, v in elem.key.items():
-            v = escape_string(v, "]")
-            p += "[" + k + "=" + v + "]"
-
-    return p
 
 
 def extract_value(update):
@@ -134,13 +62,6 @@ def extract_value(update):
         val = extract_value_v3(update.value)
 
     return val
-
-
-def decode_bytes(bites, encoding='utf-8'):
-    # python 3.6+ does this automatically
-    if sys.version_info < (3, 6):
-        return bites.decode(encoding)
-    return bites
 
 
 def extract_value_v3(value):
@@ -229,6 +150,86 @@ def parse_args():
     return parser.parse_args()
 
 
+def parse_duration(duration):
+
+    multipliers = {
+        "n": 1,
+        "u": 1000,
+        "m": 1000000,
+        "ms": 1000000,
+        "s": 1000000000
+    }
+
+    if duration is None:
+        return None
+
+    m = re.match(r'(?P<value>\d+)(?P<unit>[a-z]+)?', duration)
+
+    val = int(m.group("value"))
+    unit = m.group("unit") or "m"
+
+    if unit not in multipliers:
+        raise ValueError("Invalid unit in duration: %s" % duration)
+
+    return val * multipliers[unit]
+
+
+def parse_path(path):
+    names = []
+    path = path.strip().strip("/")
+    if not path or path == "/":
+        names = []
+    else:
+        # split path on unescaped forward slashes, then remove the esacape character
+        names = [re.sub(r"\\", "", n) for n in re.split(r"(?<!\\)/", path)]
+
+    elems = []
+    for name in names:
+        match = _RE_PATH_COMPONENT.search(name)
+        if not match:
+            raise ValueError("path component parse error: %s" % name)
+
+        if match.group("key") is not None:
+            tmp_key = {}
+            for x in re.findall(r"\[([^]]*)\]", name):
+                val = x.split("=")[-1]
+                tmp_key[x.split("=")[0]] = val
+
+            pname = match.group("pname")
+            elem = gnmi.PathElem(name=pname, key=tmp_key)
+            elems.append(elem)
+        else:
+            name = re.sub(r"\\", "", name)
+            elems.append(gnmi.PathElem(name=name, key={}))
+
+    return gnmi.Path(elem=elems)
+
+
+def str_path(path):
+    if not path:
+        return "/"
+    elif len(path.elem) > 0:
+        return str_path_v4(path)
+    elif len(path.element) > 0:
+        return str_path_v3(path)
+    return "/"
+
+
+def str_path_v3(path):
+    return "/" + "/".join(path.element)
+
+
+def str_path_v4(path):
+    p = ""
+    for elem in path.elem:
+        p += "/" + escape_string(elem.name, "/")
+        for k, v in elem.key.items():
+            v = escape_string(v, "]")
+            p += "[" + k + "=" + v + "]"
+
+    return p
+
+
 def main():
 
     args = parse_args()
@@ -293,7 +294,7 @@ def main():
 
     subs = []
     for path in paths:
-        path = _parse_path(path)
+        path = parse_path(path)
 
         if origin:
             path.origin = origin
