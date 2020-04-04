@@ -10,7 +10,7 @@ import grpc
 import gnmi_pb2 as gnmi
 import gnmi_pb2_grpc
 
-__version__ = "0.1.4"
+__version__ = "0.1.5"
 
 if sys.version_info < (3, 5):
     # see: https://devguide.python.org/devcycle/
@@ -200,7 +200,7 @@ def parse_args():
                        help="ex. (--origin eos_native)")
 
     group = parser.add_argument_group()
-    group.add_argument("--interval", default="10s", type=str,
+    group.add_argument("--interval", default=None, type=str,
                        help="sample interval in milliseconds (default: 10s)")
     group.add_argument("--timeout", default=None, type=str,
                        help="subscription duration in milliseconds (default: None)")
