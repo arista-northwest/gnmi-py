@@ -14,12 +14,13 @@ import google.protobuf
 
 __version__ = "0.1.5"
 
-PB_VERSION = google.protobuf.__version__
-GRPC_VERSION = grpc.__version__
-
 if sys.version_info < (3, 5):
     # see: https://devguide.python.org/devcycle/
     raise ValueError("Python 3.5+ is required")
+
+_PB_VERSION = google.protobuf.__version__
+_GRPC_VERSION = grpc.__version__
+_PROG_NAME = "gnmi-py"
 
 _RE_PATH_COMPONENT = re.compile(r'''
 ^
@@ -29,8 +30,6 @@ _RE_PATH_COMPONENT = re.compile(r'''
 (?P<value>.*)
 \])?$
 ''', re.VERBOSE)
-
-_PROG_NAME = "gnmi-py"
 
 
 def _parse_path(path):
@@ -191,7 +190,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--version", action="version",
-                        version="%s %s [protobuf %s, grpcio %s]" % (_PROG_NAME, __version__, PB_VERSION, GRPC_VERSION))
+                        version="%s %s [protobuf %s, grpcio %s]" % (_PROG_NAME, __version__, _PB_VERSION, _GRPC_VERSION))
     parser.add_argument("target", default="127.0.0.1:6030",
                         help="gNMI gRPC server (default: localhost:6030)")
     parser.add_argument("paths", nargs="*", default=["/"])
