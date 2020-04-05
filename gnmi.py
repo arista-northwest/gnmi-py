@@ -11,6 +11,7 @@ Current supported gNMI features:
 import argparse
 import json
 import re
+import os
 import sys
 
 import grpc
@@ -35,7 +36,6 @@ _RE_PATH_COMPONENT = re.compile(r'''
 (?P<value>.*)
 \])?$
 ''', re.VERBOSE)
-
 
 def decode_bytes(bites, encoding='utf-8'):
     # python 3.6+ does this automatically
@@ -80,6 +80,7 @@ def extract_value_v3(value):
         raise ValueError("Unhandled type of value %s" % str(value))
     return val
 
+
 def extract_value_v4(value):
     val = None
     if value.HasField("any_val"):
@@ -116,6 +117,7 @@ def extract_value_v4(value):
 
     return val
 
+
 def format_version():
     elems = (_PROG_NAME, __version__,
              google.protobuf.__version__, grpc.__version__)
@@ -132,14 +134,18 @@ def parse_args():
     parser.add_argument("paths", nargs="*", default=["/"])
 
     group = parser.add_argument_group()
+    group.add_argument("-d", "--debug", action="store_true",
+                       help="enable gRPC debugging")
+
+    group = parser.add_argument_group()
     group.add_argument("-u", "--username", default="admin")
     group.add_argument("-p", "--password", default="")
 
-    group = parser.add_argument_group()
+    group = parser.add_argument_group("Path options")
     group.add_argument("--origin", default=None, type=str,
                        help="ex. (--origin eos_native)")
 
-    group = parser.add_argument_group()
+    group = parser.add_argument_group("Subscribe options")
     group.add_argument("--interval", default=None, type=str,
                        help="sample interval in milliseconds (default: 10s)")
     group.add_argument("--timeout", default=None, type=str,
@@ -154,14 +160,16 @@ def parse_args():
                        help="subscription mode [target-defined, on-change, sample]")
     group.add_argument("--mode", default="stream", type=str,
                        help="[stream, once, poll]")
+    group.add_argument("--qos", default=0, type=int,
+                       help="DSCP value to be set on transmitted telemetry")
+    
+    group.add_argument("--use-alias", action="store_true", help="use aliases")
+    
     group.add_argument("--encoding", default="json", type=str,
                        help="[json, bytes, proto, ascii, json-ietf]")
-    group.add_argument("--qos", default=0, type=int,
-                       help="[JSON, BYTES, PROTO, ASCII, JSON_IETF]")
-    group.add_argument("--use-alias", action="store_true", help="use aliases")
     group.add_argument("--prefix", default=None,
                        help="gRPC path prefix (default: none)")
-
+    gnmi.GetRequest()
     return parser.parse_args()
 
 
@@ -246,12 +254,40 @@ def str_path_v4(path):
 
     return strpath
 
-def do_subscribe(stub):
+
+def enable_debuging():
+    os.environ['GRPC_TRACE'] = 'all'
+    os.environ['GRPC_VERBOSITY'] = 'DEBUG'
+
+def new_gnmi_creds():
+    return None
+
+def new_gnmi_stub(target, creds=None, host_override=None):
+    # if creds:
+    #     if host_override:
+    #         channel = gnmi_pb2_grpc.grpc.secure_channel(target, creds,
+    #             (('grpc.ssl_target_name_override', host_override,),))
+    #     else:
+    #         channel = gnmi_pb2_grpc.grpc.secure_channel(target, creds)
+    # else:
+    channel = gnmi_pb2_grpc.grpc.insecure_channel(target)
+
+    return gnmi_pb2_grpc.gNMIStub(channel)
+
+
+def do_subscribe(stub, options={}):
+    pass
+
+def do_get(stub, paths):
     pass
 
 def main():
 
     args = parse_args()
+
+    if args.debug:
+        enable_debuging()
+
     target = args.target
     origin = args.origin
 
@@ -311,9 +347,10 @@ def main():
     channel = grpc.insecure_channel(target)
     stub = gnmi_pb2_grpc.gNMIStub(channel)
 
+    paths = [parse_path(path) for path in paths]
+    
     subs = []
     for path in paths:
-        path = parse_path(path)
 
         if origin:
             path.origin = origin
@@ -332,6 +369,7 @@ def main():
         req_iter = gnmi.SubscribeRequest(subscribe=sub_list)
         yield req_iter
 
+    
     try:
         responses = stub.Subscribe(_sr(), timeout, metadata=[
             ("username", username), ("password", password)])
