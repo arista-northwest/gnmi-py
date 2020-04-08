@@ -5,7 +5,7 @@
 import io
 import os
 import re
-from setuptools import setup
+from setuptools import setup, find_packages
 
 with io.open('gnmi/__init__.py', 'rt', encoding='utf8') as f:
     version = re.search(r'__version__ = \"(.*?)\"', f.read()).group(1)
@@ -30,5 +30,14 @@ setup(
         'Programming Language :: Python :: 3.6',
         'Topic :: Software Development :: Libraries :: Python Modules',
         'Topic :: Internet'
-    ]
+    ],
+    packages = find_packages(),
+    #package_data={'': ['settings.yml']},
+    url = "https://github.com/arista-northwest1/gnmi-py",
+    license = "MIT Licesnse",
+    entry_points = {
+        'console_scripts': [
+            'gnmipy = gnmi.entry:main'
+        ]
+    }
 )

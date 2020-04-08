@@ -5,8 +5,12 @@
 from typing import List
 from typing_extensions import Final
 
+import grpc
+
 DEFAULT_GRPC_PORT = 6030
 DEFAULT_GRPC_HOST = "localhost"
+
+GRPC_CODE_MAP = {x.value[0]: x for x in grpc.StatusCode}
 
 MODE_MAP: Final[List[str]] = [
     "stream",

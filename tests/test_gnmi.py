@@ -1,8 +1,8 @@
 import os
 import pytest
 from gnmi.session import Session
-from gnmi.messages import Path_
-from gnmi.messages import Update_
+from gnmi.messages import Path_, Update_
+from gnmi.exceptions import GrpcError, GrpcDeadlineExceeded
 from gnmi import util
 
 GNMI_TARGET = os.environ.get("GNMI_TARGET", "veos3:6030")
@@ -51,8 +51,9 @@ def test_gnmi_get(gnmi_session, gnmi_paths):
 
 def test_gnmi_sub(gnmi_session, gnmi_paths):
     
-    for resp in gnmi_session.subscribe(gnmi_paths):
-        prefix = resp.update.prefix
-        for update in resp.update.updates:
-            path = prefix + update.path
-            print(str(path), update.value)
+    with pytest.raises(GrpcDeadlineExceeded) as exc:
+        for resp in gnmi_session.subscribe(gnmi_paths, options={"timeout": 2}):
+            prefix = resp.update.prefix
+            for update in resp.update.updates:
+                path = prefix + update.path
+                print(str(path), update.value)

@@ -7,11 +7,15 @@ import google.protobuf as _
 from .proto import gnmi_pb2 as pb  # type: ignore
 from .proto import gnmi_pb2_grpc  # type: ignore
 
+from typing import Optional, Iterator
+
 from gnmi import util
-from gnmi.messages import CapabilitiesResponse_, GetResponse_, Path_, SubscribeResponse_
+from gnmi.messages import CapabilitiesResponse_, GetResponse_, Path_, Status_
+from gnmi.messages import SubscribeResponse_
 from gnmi.structures import Metadata, Target, CertificateStore, Options
 from gnmi.structures import GetOptions, SubscribeOptions
 from gnmi.constants import DEFAULT_GRPC_PORT, MODE_MAP, DATA_TYPE_MAP
+from gnmi.exceptions import GrpcError, GrpcDeadlineExceeded
 
 class Session(object):
 
@@ -54,12 +58,17 @@ class Session(object):
             raise ValueError("'extension' is not implemented yet.")
 
         _cr = pb.CapabilityRequest()  # type: ignore
-        response = self._stub.Capabilities(_cr, metadata=self.metadata)
 
+        try:
+            response = self._stub.Capabilities(_cr, metadata=self.metadata)  
+        except grpc.RpcError as rpcerr:
+            status = Status_.from_call(rpcerr)
+            raise GrpcError(status)
+        
         return CapabilitiesResponse_(response)
 
     def get(self, paths: list, options: GetOptions = {}) -> GetResponse_:
-
+        response: Optional[GetResponse_] = None
         prefix = util.parse_path(options.get("prefix", "/"))
         encoding = util.get_gnmi_constant(options.get("encoding", "json"))
         type_ = DATA_TYPE_MAP.index(options.get("type", "all"))
@@ -68,13 +77,17 @@ class Session(object):
         _gr = pb.GetRequest(path=paths, prefix=prefix, encoding=encoding,
                             type=type_)  # type: ignore
 
-        response = self._stub.Get(_gr, metadata=self.metadata)
-
+        try:
+            response = self._stub.Get(_gr, metadata=self.metadata)
+        except grpc.RpcError as rpcerr:
+            status = Status_.from_call(rpcerr)
+            raise GrpcError(status)
+        
         return GetResponse_(response)
 
     def set(self): ...
 
-    def subscribe(self, paths: list, options: SubscribeOptions = {}):
+    def subscribe(self, paths: list, options: SubscribeOptions = {}) -> Iterator[SubscribeResponse_]:
 
         aggregate = options.get("aggregate", False)
         encoding = util.get_gnmi_constant(options.get("encoding", "json"))
@@ -120,3 +133,10 @@ class Session(object):
 
         except KeyboardInterrupt:
             raise
+        except grpc.RpcError as rpcerr:
+            status = Status_.from_call(rpcerr)
+
+            if status.code.name == "DEADLINE_EXCEEDED":
+                raise GrpcDeadlineExceeded(status)
+            else:
+                raise GrpcError(status)

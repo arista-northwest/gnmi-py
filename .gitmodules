@@ -1,3 +1,6 @@
 [submodule "openconfig/gnmi"]
 	path = openconfig/gnmi
 	url = https://github.com/openconfig/gnmi
+[submodule "submodule/grpc"]
+	path = submodule/grpc
+	url = https://github.com/grpc/grpc.git

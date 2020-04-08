@@ -3,11 +3,13 @@
 # Arista Networks, Inc. Confidential and Proprietary.
 
 import re
+import collections
 
 from typing import List
 import google.protobuf as _
-
+import grpc
 from .proto import gnmi_pb2 as pb  # type: ignore
+from .proto import status_pb2
 from gnmi import util
 
 class CapabilitiesResponse_(object):
@@ -196,3 +198,12 @@ class Path_(object):
                 elems.append(pb.PathElem(name=name, key={})) # type: ignore
         
         return cls(pb.Path(origin=origin, elem=elems)) # type: ignore
+
+class Status_(collections.namedtuple('Status_', 
+        ('code', 'details', 'trailing_metadata')), grpc.Status):
+    
+    _CODE_TO_GRPC_CODE_MAPPING = {x.value[0]: x for x in grpc.StatusCode}
+
+    @classmethod
+    def from_call(cls, call):
+        return cls(call.code(), call.details(), call.trailing_metadata())
