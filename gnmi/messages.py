@@ -202,8 +202,6 @@ class Path_(object):
 class Status_(collections.namedtuple('Status_', 
         ('code', 'details', 'trailing_metadata')), grpc.Status):
     
-    _CODE_TO_GRPC_CODE_MAPPING = {x.value[0]: x for x in grpc.StatusCode}
-
     @classmethod
     def from_call(cls, call):
         return cls(call.code(), call.details(), call.trailing_metadata())
