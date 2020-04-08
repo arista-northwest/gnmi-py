@@ -6,7 +6,7 @@ from gnmi.messages import Update_
 from gnmi import util
 
 GNMI_TARGET = os.environ.get("GNMI_TARGET", "veos3:6030")
-GNMI_PATHS = os.environ.get("GNMI_PATHS", "/system/config;system/memory/state")
+GNMI_PATHS = os.environ.get("GNMI_PATHS", "/system/config;/system/memory/state")
 
 
 @pytest.fixture()
