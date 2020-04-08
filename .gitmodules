@@ -1,7 +1,3 @@
-[submodule "github.com/openconfig/gnmi"]
-	path = openconfig/gnmi
-	url = https://github.com/openconfig/gnmi
-	branch = master
 [submodule "openconfig/gnmi"]
 	path = openconfig/gnmi
 	url = https://github.com/openconfig/gnmi

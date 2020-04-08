@@ -16,15 +16,14 @@ import sys
 
 import grpc
 import google.protobuf
-import gnmi_pb2 as gnmi
-import gnmi_pb2_grpc
-
+from gnmi.proto import gnmi_pb2 as pb
+from gnmi.proto import gnmi_pb2_grpc
 
 __version__ = "0.1.6"
 
-if sys.version_info < (3, 5):
+if sys.version_info < (3, 6):
     # see: https://devguide.python.org/devcycle/
-    raise ValueError("Python 3.5+ is required")
+    raise ValueError("Python 3.6+ is required")
 
 _PROG_NAME = "gnmi-py"
 
@@ -36,6 +35,7 @@ _RE_PATH_COMPONENT = re.compile(r'''
 (?P<value>.*)
 \])?$
 ''', re.VERBOSE)
+
 
 def decode_bytes(bites, encoding='utf-8'):
     # python 3.6+ does this automatically
@@ -70,11 +70,11 @@ def extract_value(update):
 
 def extract_value_v3(value):
     val = None
-    if value.type in (gnmi.JSON_IETF, gnmi.JSON):
+    if value.type in (pb.JSON_IETF, pb.JSON):
         val = json.loads(decode_bytes(value.value))
-    elif value.type in (gnmi.BYTES, gnmi.PROTO):
+    elif value.type in (pb.BYTES, pb.PROTO):
         val = value.value
-    elif value.type == gnmi.ASCII:
+    elif value.type == pb.ASCII:
         val = str(value.value)
     else:
         raise ValueError("Unhandled type of value %s" % str(value))
@@ -162,14 +162,14 @@ def parse_args():
                        help="[stream, once, poll]")
     group.add_argument("--qos", default=0, type=int,
                        help="DSCP value to be set on transmitted telemetry")
-    
+
     group.add_argument("--use-alias", action="store_true", help="use aliases")
-    
+
     group.add_argument("--encoding", default="json", type=str,
                        help="[json, bytes, proto, ascii, json-ietf]")
-    group.add_argument("--prefix", default=None,
+    group.add_argument("--prefix", default="", type=str,
                        help="gRPC path prefix (default: none)")
-    gnmi.GetRequest()
+    pb.GetRequest()
     return parser.parse_args()
 
 
@@ -203,7 +203,6 @@ def parse_path(path):
     if not path or path == "/":
         names = []
     else:
-        # split path on unescaped forward slashes, then remove the esacape character
         names = [re.sub(r"\\", "", n) for n in re.split(r"(?<!\\)/", path)]
 
     elems = []
@@ -219,13 +218,12 @@ def parse_path(path):
                 tmp_key[keyval.split("=")[0]] = val
 
             pname = match.group("pname")
-            elem = gnmi.PathElem(name=pname, key=tmp_key)
+            elem = pb.PathElem(name=pname, key=tmp_key)
             elems.append(elem)
         else:
-            name = re.sub(r"\\", "", name)
-            elems.append(gnmi.PathElem(name=name, key={}))
+            elems.append(pb.PathElem(name=name, key={}))
 
-    return gnmi.Path(elem=elems)
+    return pb.Path(elem=elems)
 
 
 def str_path(path):
@@ -241,6 +239,7 @@ def str_path(path):
 
 
 def str_path_v3(path):
+    print(path.element)
     return "/" + "/".join(path.element)
 
 
@@ -259,28 +258,6 @@ def enable_debuging():
     os.environ['GRPC_TRACE'] = 'all'
     os.environ['GRPC_VERBOSITY'] = 'DEBUG'
 
-def new_gnmi_creds():
-    return None
-
-def new_gnmi_stub(target, creds=None, host_override=None):
-    # if creds:
-    #     if host_override:
-    #         channel = gnmi_pb2_grpc.grpc.secure_channel(target, creds,
-    #             (('grpc.ssl_target_name_override', host_override,),))
-    #     else:
-    #         channel = gnmi_pb2_grpc.grpc.secure_channel(target, creds)
-    # else:
-    channel = gnmi_pb2_grpc.grpc.insecure_channel(target)
-
-    return gnmi_pb2_grpc.gNMIStub(channel)
-
-
-def do_subscribe(stub, options={}):
-    pass
-
-def do_get(stub, paths):
-    pass
-
 def main():
 
     args = parse_args()
@@ -289,87 +266,89 @@ def main():
         enable_debuging()
 
     target = args.target
+
     origin = args.origin
+    prefix = args.prefix
+    prefix = parse_path(prefix)
+    # print(_prefix)
 
     paths = args.paths
     username = args.username
     password = args.password
-    timeout = args.timeout
-
-    suppress = args.suppress
-    interval = None
-
-    interval = parse_duration(args.interval)
-    heartbeat = parse_duration(args.heartbeat)
-
-    prefix = args.prefix
-    aggregate = args.aggregate
-    use_alias = args.use_alias
-
-    submode = None
-    if args.submode == "target-defined":
-        submode = gnmi.TARGET_DEFINED
-    elif args.submode == "on-change":
-        submode = gnmi.ON_CHANGE
-    elif args.submode == "sample":
-        submode = gnmi.SAMPLE
-    else:
-        raise ValueError("Invalid subscription mode %s" % str(args.submode))
 
     encoding = None
     if args.encoding == "json":
-        encoding = gnmi.JSON_IETF
+        encoding = pb.JSON_IETF
     elif args.encoding == "bytes":
-        encoding = gnmi.BYTES
+        encoding = pb.BYTES
     elif args.encoding == "proto":
-        encoding = gnmi.PROTO
+        encoding = pb.PROTO
     elif args.encoding == "ascii":
-        encoding = gnmi.ASCII
+        encoding = pb.ASCII
     elif args.encoding == "json-ietf":
-        encoding = gnmi.JSON_IETF
+        encoding = pb.JSON_IETF
     else:
         raise ValueError("Invalid encoding %s" % str(args.encoding))
+
+    # subscribe options
+    timeout = args.timeout
+    suppress = args.suppress
+    interval = parse_duration(args.interval)
+    heartbeat = parse_duration(args.heartbeat)
+    aggregate = args.aggregate
+    use_alias = args.use_alias
+
+    qos = None
+    if args.qos is not None:
+        qos = pb.QOSMarking(marking=0)
+
+    submode = None
+    if args.submode == "target-defined":
+        submode = pb.TARGET_DEFINED
+    elif args.submode == "on-change":
+        submode = pb.ON_CHANGE
+    elif args.submode == "sample":
+        submode = pb.SAMPLE
+    else:
+        raise ValueError("Invalid subscription mode %s" % str(args.submode))
 
     mode = None
     if args.mode == "stream":
         mode = 0
     elif args.mode == "once":
         mode = 1
-    elif args.nide == "poll":
+    elif args.mode == "poll":
         mode = 2
     else:
-        raise ValueError("Invalud mode %s" % str(args.mode))
+        raise ValueError("Invalid mode %s" % str(args.mode))
 
-    qos = None
-    if args.qos is not None:
-        qos = gnmi.QOSMarking(marking=0)
 
     channel = grpc.insecure_channel(target)
     stub = gnmi_pb2_grpc.gNMIStub(channel)
 
     paths = [parse_path(path) for path in paths]
-    
+
     subs = []
     for path in paths:
 
         if origin:
             path.origin = origin
 
-        sub = gnmi.Subscription(path=path, mode=submode,
+        sub = pb.Subscription(path=path, mode=submode,
                                 suppress_redundant=suppress,
                                 sample_interval=interval,
                                 heartbeat_interval=heartbeat)
         subs.append(sub)
 
     def _sr():
-        sub_list = gnmi.SubscriptionList(prefix=prefix, mode=mode,
+
+        sub_list = pb.SubscriptionList(prefix=prefix, mode=mode,
                                          allow_aggregation=aggregate,
                                          encoding=encoding, subscription=subs,
                                          use_aliases=use_alias, qos=qos)
-        req_iter = gnmi.SubscribeRequest(subscribe=sub_list)
+        req_iter = pb.SubscribeRequest(subscribe=sub_list)
         yield req_iter
 
-    
     try:
         responses = stub.Subscribe(_sr(), timeout, metadata=[
             ("username", username), ("password", password)])
@@ -381,7 +360,7 @@ def main():
                 print("gNMI Error " + str(response.error.code) +
                       " received\n" + str(response.error.message))
             elif response.HasField("update"):
-                prefix = str_path(response.update.prefix)
+                prefix = str_path(q)
 
                 if prefix == "/":
                     prefix = ""

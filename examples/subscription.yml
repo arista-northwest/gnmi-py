@@ -1,0 +1,26 @@
+---
+x-subscription: &subscription
+    mode: on-change
+    suppress_redundant:
+    sample_interval:
+    heartbeat_interval:
+
+subscribe:
+    timeout: ~
+    metadata:
+        username: admin
+        password: ""
+    subscription_list:
+        # prefix: /system
+        subscription_mode: stream
+        allow_aggregation: ~
+        encoding: json
+        use_aliases: ~
+        qos: 0
+        subscription:
+            -
+              << : *subscription
+              path: eos_native:/Kernel/proc/stat/
+            - 
+              << : *subscription
+              path: /system/processes/process[pid=*]/state
