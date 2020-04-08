@@ -100,7 +100,7 @@ class PathElem_(object):
         self.name = self.raw.name
 
 class Path_(object):
-
+    RE_ORIGIN = re.compile(r"(?:(?P<origin>[\w\-]+)?:)?(?P<path>\S+)$")
     RE_COMPONENT = re.compile(r'''
 ^
 (?P<pname>[^[]+)
@@ -167,15 +167,16 @@ class Path_(object):
 
         names: List[str] = []
         elems: list = []
+        
+        path = path.strip()
+        origin = None
 
-        origin, path = re.split(r":", path, 2)
-        path = path.strip().strip("/")
+        match = cls.RE_ORIGIN.search(path)
+        origin = match.group("origin")
+        path = match.group("path")
         
-        if not path or path == "/":
-            names = []
-        else:
-            names = [re.sub(r"\\", "", n) for n in re.split(r"(?<!\\)/", path)]
-        
+        if path:
+            names = [re.sub(r"\\", "", name) for name in re.split(r"(?<!\\)/", path) if name]
         
         for name in names:
             match = cls.RE_COMPONENT.search(name)
