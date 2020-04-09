@@ -8,8 +8,8 @@ import collections
 from typing import List
 import google.protobuf as _
 import grpc
+
 from gnmi.proto import gnmi_pb2 as pb  # type: ignore
-from gnmi.proto import status_pb2
 from gnmi import util
 
 class CapabilitiesResponse_(object):
@@ -110,7 +110,6 @@ class Path_(object):
 =
 (?P<value>.*)
 \])?$
-
 ''', re.VERBOSE)
     
     def __init__(self, path):

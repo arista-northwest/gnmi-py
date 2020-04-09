@@ -1,10 +1,4 @@
 ---
-x-subscription: &subscription
-    mode: on-change
-    suppress_redundant:
-    sample_interval:
-    heartbeat_interval:
-
 metadata:
     username: admin
     password: ""

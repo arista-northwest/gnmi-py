@@ -94,9 +94,9 @@ class Session(object):
         heartbeat = options.get("heartbeat", None)
         interval = options.get("interval", None)
         mode = MODE_MAP.index(options.get("mode", "stream"))
-        prefix = util.parse_path(options.get("prefix", "/"))
+        prefix = Path_.from_string(options.get("prefix") or "/")
         qos = pb.QOSMarking(marking=options.get("qos", 0))
-        submode = util.get_gnmi_constant(options.get("submode", "on-change"))
+        submode = util.get_gnmi_constant(options.get("submode") or "on-change")
         suppress = options.get("suppress", False)
         timeout = options.get("timeout", None)
         use_alias = options.get("use_alias", False)
@@ -113,7 +113,7 @@ class Session(object):
 
         def _sr():
 
-            sub_list = pb.SubscriptionList(prefix=prefix, mode=mode,
+            sub_list = pb.SubscriptionList(prefix=prefix.raw, mode=mode,
                                            allow_aggregation=aggregate,
                                            encoding=encoding, subscription=subs,
                                            use_aliases=use_alias, qos=qos)
