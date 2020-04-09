@@ -54,9 +54,22 @@ class Session(object):
     def _insecure_channel(self):
         return grpc.insecure_channel(self.addr)  # type: ignore
 
+    def _parse_path(self, path):
+        if not path:
+            path = Path_.from_string(path).raw
+        elif isinstance(path, Path_):
+            path = path.raw
+        elif isinstance(path, str):
+            path = Path_.from_string(path).raw
+        elif isinstance(path, (list, tuple)):
+            path = Path_.from_string("/".join(path)).raw
+        else:
+            raise ValueError("Failed to parse path: %s" % str(path))
+        return path
+    
     def capabilities(self, options: Options = {}) -> CapabilitiesResponse_:
-        if options.get("extension"):
-            raise ValueError("'extension' is not implemented yet.")
+        # if options.get("extension"):
+        #     raise ValueError("'extension' is not implemented yet.")
 
         _cr = pb.CapabilityRequest()  # type: ignore
 
@@ -70,15 +83,13 @@ class Session(object):
 
     def get(self, paths: List[Path_], options: GetOptions = {}) -> GetResponse_:
         response: Optional[GetResponse_] = None
-        prefix = options.get("prefix") or "/"
-        prefix = Path_.from_string(prefix)
-
+        prefix = self._parse_path(options.get("prefix"))
         encoding = util.get_gnmi_constant(options.get("encoding") or "json")
         type_ = DATA_TYPE_MAP.index(options.get("type") or "all")
 
-        paths = [path.raw for path in paths]
-
-        _gr = pb.GetRequest(path=paths, prefix=prefix.raw, encoding=encoding,
+        #paths = [path.raw for path in paths]
+        paths = [self._parse_path(path) for path in paths]
+        _gr = pb.GetRequest(path=paths, prefix=prefix, encoding=encoding,
                             type=type_)  # type: ignore
 
         try:
@@ -98,7 +109,7 @@ class Session(object):
         heartbeat = options.get("heartbeat", None)
         interval = options.get("interval", None)
         mode = MODE_MAP.index(options.get("mode", "stream"))
-        prefix = Path_.from_string(options.get("prefix") or "/")
+        prefix = self._parse_path(options.get("prefix"))
         qos = pb.QOSMarking(marking=options.get("qos", 0))
         submode = util.get_gnmi_constant(options.get("submode") or "on-change")
         suppress = options.get("suppress", False)
@@ -107,7 +118,8 @@ class Session(object):
 
         subs = []
         for path in paths:
-            sub = pb.Subscription(path=path.raw, mode=submode,
+            path = self._parse_path(path)
+            sub = pb.Subscription(path=path, mode=submode,
                                   suppress_redundant=suppress,
                                   sample_interval=interval,
                                   heartbeat_interval=heartbeat)
@@ -115,7 +127,7 @@ class Session(object):
 
         def _sr():
 
-            sub_list = pb.SubscriptionList(prefix=prefix.raw, mode=mode,
+            sub_list = pb.SubscriptionList(prefix=prefix, mode=mode,
                                            allow_aggregation=aggregate,
                                            encoding=encoding, subscription=subs,
                                            use_aliases=use_alias, qos=qos)
