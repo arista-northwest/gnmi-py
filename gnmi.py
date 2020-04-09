@@ -169,7 +169,7 @@ def parse_args():
                        help="[json, bytes, proto, ascii, json-ietf]")
     group.add_argument("--prefix", default="", type=str,
                        help="gRPC path prefix (default: none)")
-    pb.GetRequest()
+
     return parser.parse_args()
 
 

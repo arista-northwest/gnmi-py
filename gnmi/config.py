@@ -17,6 +17,7 @@ def __h_metadata(data):
 class ConfigElem(Mapping):
 
     def __init__(self, data: dict):
+        self.raw = data
         self._data = dict(ConfigElem._loader(k, v) for k, v in data.items())
 
     def __iter__(self):

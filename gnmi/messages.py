@@ -22,7 +22,7 @@ class CapabilitiesResponse_(object):
         for model in self.raw.supported_models:
             yield {
                 "name": model.name,
-                "orgainization": model.organization,
+                "organization": model.organization,
                 "version": model.version
             }
     models = supported_models

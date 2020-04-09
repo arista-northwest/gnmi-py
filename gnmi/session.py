@@ -4,8 +4,8 @@
 
 import grpc
 import google.protobuf as _
-from .proto import gnmi_pb2 as pb  # type: ignore
-from .proto import gnmi_pb2_grpc  # type: ignore
+from gnmi.proto import gnmi_pb2 as pb  # type: ignore
+from gnmi.proto import gnmi_pb2_grpc  # type: ignore
 
 from typing import Optional, Iterator
 
@@ -69,9 +69,9 @@ class Session(object):
 
     def get(self, paths: list, options: GetOptions = {}) -> GetResponse_:
         response: Optional[GetResponse_] = None
-        prefix = util.parse_path(options.get("prefix", "/"))
-        encoding = util.get_gnmi_constant(options.get("encoding", "json"))
-        type_ = DATA_TYPE_MAP.index(options.get("type", "all"))
+        prefix = util.parse_path(options.get("prefix") or "/")
+        encoding = util.get_gnmi_constant(options.get("encoding") or "json")
+        type_ = DATA_TYPE_MAP.index(options.get("type") or "all")
         paths = [util.parse_path(path) for path in paths]
 
         _gr = pb.GetRequest(path=paths, prefix=prefix, encoding=encoding,
@@ -131,8 +131,6 @@ class Session(object):
                 else:
                     raise ValueError("Unknown response: " + str(response))
 
-        except KeyboardInterrupt:
-            raise
         except grpc.RpcError as rpcerr:
             status = Status_.from_call(rpcerr)
 

@@ -5,22 +5,23 @@ x-subscription: &subscription
     sample_interval:
     heartbeat_interval:
 
+metadata:
+    username: admin
+    password: ""
+
 subscribe:
-    timeout: ~
-    metadata:
-        username: admin
-        password: ""
-    subscription_list:
+    options:
         # prefix: /system
         subscription_mode: stream
         allow_aggregation: ~
         encoding: json
         use_aliases: ~
         qos: 0
-        subscription:
-            -
-              << : *subscription
-              path: eos_native:/Kernel/proc/stat/
-            - 
-              << : *subscription
-              path: /system/processes/process[pid=*]/state
+        mode: on-change
+        suppress_redundant: ~
+        sample_interval: ~
+        heartbeat_interval: ~
+    paths:
+        - eos_native:/Kernel/proc/stat/
+        - /system/processes/process[pid=*]/state
+    timeout: ~
