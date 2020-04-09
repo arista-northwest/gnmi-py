@@ -1,23 +1,23 @@
 # gNMI Python Client
 
+## Installation
 
 ### Python 3
 
 ```
 pip3 install -r requirements.txt
+python3 setup.py install
 ```
 
 ### Python 2
 
-```
-pip install -r py2.txt
-```
+Not supported
 
 
 ### Usage
 
 ```
-% python3 gnmi.py --help
+% gnmipy --help
 usage: gnmi.py [-h] [--version] [-u USERNAME] [-p PASSWORD]
                [--interval INTERVAL] [--timeout TIMEOUT]
                [--heartbeat HEARTBEAT] [--aggregate] [--suppress]
@@ -57,13 +57,44 @@ optional arguments:
 #### openconfig paths...
 
 ```
-python3 gnmi.py veos1:6030 /interfaces
+gnmipy veos1:6030 subscribe /interfaces
 ```
 
 
 #### Terminattr paths
 
 ```
-python3 gnmi.py --origin eos_native veos3:6030 /Smash
+gnmipy --origin eos_native veos3:6030 subscribe /Smash
 ```
 
+
+## API
+
+```
+from gnmi.session import Session
+from gnmi.exceptions import GrpcDeadlineExceeded
+
+metadata = [
+    ("username", "admin"),
+    ("password", "")
+]
+
+paths = ["/config", "/memory/state"]
+target = ("rbf153", 6030)
+sess = Session(target, metadata=metadata)
+
+for notif in sess.get(paths, options={"prefix": "/system"}):
+    prefix = notif.prefix
+    for update in notif.updates:
+        path = prefix + update.path
+        print(path, update.value)
+
+paths = ["/processes/process"]
+try:
+    for resp in sess.subscribe(paths, options={"timeout": 5, "prefix": "/system"}):
+        prefix = resp.update.prefix
+        for update in resp.update.updates:
+            path = prefix + update.path
+            print(str(path), update.value)
+except GrpcDeadlineExceeded:
+  print("User defined timeout exceeded.")
