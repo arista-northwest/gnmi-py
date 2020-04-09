@@ -100,4 +100,4 @@ try:
             path = prefix + update.path
             print(str(path), update.value)
 except GrpcDeadlineExceeded:
-  print("User defined timeout exceeded.")
+    print("User defined timeout exceeded.")
