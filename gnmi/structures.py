@@ -22,7 +22,7 @@ Metadata = List[Tuple[str, Any]]
 class Options(TypedDict, total=False):
     prefix: Any
     encoding: str
-    #extension: list
+    extension: list
 
 
 class SubscribeOptions(Options, total=False):
