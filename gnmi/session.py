@@ -86,9 +86,9 @@ class Session(object):
         prefix = self._parse_path(options.get("prefix"))
         encoding = util.get_gnmi_constant(options.get("encoding") or "json")
         type_ = DATA_TYPE_MAP.index(options.get("type") or "all")
-
-        #paths = [path.raw for path in paths]
+        
         paths = [self._parse_path(path) for path in paths]
+        
         _gr = pb.GetRequest(path=paths, prefix=prefix, encoding=encoding,
                             type=type_)  # type: ignore
 
