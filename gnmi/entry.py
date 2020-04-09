@@ -4,6 +4,8 @@
 
 import argparse
 import os
+import signal
+import sys
 
 from grpc import __version__ as grpc_version
 from google.protobuf import __version__ as pb_version
@@ -17,7 +19,10 @@ from gnmi import util
 import gnmi
 
 
-from pprint import pprint
+def signal_handler(signal, frame):
+    sys.exit(0)
+
+signal.signal(signal.SIGINT, signal_handler)
 
 def format_version():
     elems = (os.path.basename(__file__), gnmi.__version__,
@@ -152,8 +157,8 @@ def main():
                 for update in resp.update.updates:
                     path = prefix + update.path
                     print(str(path), update.value)
-        except KeyboardInterrupt:
-            pass
+        # except KeyboardInterrupt:
+        #     pass
         except GrpcDeadlineExceeded:
             return
 
