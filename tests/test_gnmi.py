@@ -41,7 +41,7 @@ def test_gnmi_cap(gnmi_session):
 
 def test_gnmi_get(gnmi_session, gnmi_paths):
     resp = gnmi_session.get(gnmi_paths)
-    for notif in resp.notifications:
+    for notif in resp:
         assert notif.timestamp is not None
         for update in notif.updates:
             assert type(update) is Update_
