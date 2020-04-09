@@ -166,6 +166,9 @@ class Path_(object):
     @classmethod
     def from_string(cls, path):
 
+        if not path:
+            return cls(pb.Path(origin=None, elem=[])) # type: ignore
+        
         names: List[str] = []
         elems: list = []
         
