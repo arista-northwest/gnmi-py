@@ -1,3 +1,6 @@
-grpcio>=1.18.0
-grpcio-tools>=1.15.0
-protobuf>=3.6.1 --no-binary=protobuf
+grpcio==1.28.1
+grpcio-tools==1.28.1
+protobuf==3.11.3
+PyYAML==5.3.1
+six==1.14.0
+typing-extensions==3.7.4.2
