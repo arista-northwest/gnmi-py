@@ -42,9 +42,9 @@ def parse_args():
     group.add_argument("-u", "--username", default="admin")
     group.add_argument("-p", "--password", default="")
 
-    group = parser.add_argument_group("Path options")
-    group.add_argument("--origin", default=None, type=str,
-                       help="ex. (--origin eos_native)")
+    # group = parser.add_argument_group("Path options")
+    # group.add_argument("--origin", default=None, type=str,
+    #                    help="ex. (--origin eos_native)")
     
     group = parser.add_argument_group("Common options")
     group.add_argument("--encoding", default="json", type=str,
