@@ -4,19 +4,29 @@
 
 ### Python 3
 
+#### General Use
+
+```bash
+pip3 install gnmi-py
 ```
+
+#### Development
+
+```bash
+git clone https://github.com/arista-northwest/gnmi-py.git
+cd gnmi-py
 pip3 install -r requirements.txt
-python3 setup.py install
+python3 setup.py develop
 ```
 
 ### Python 2
 
-Not supported
+Not supported :)
 
 
 ### Usage
 
-```
+```bash
 % gnmipy --help
 usage: gnmi.py [-h] [--version] [-u USERNAME] [-p PASSWORD]
                [--interval INTERVAL] [--timeout TIMEOUT]
@@ -54,23 +64,16 @@ optional arguments:
 ### Examples
 
 
-#### openconfig paths...
+#### Command-line
 
-```
+```basha
 gnmipy veos1:6030 subscribe /interfaces
-```
-
-
-#### Terminattr paths
-
-```
-gnmipy --origin eos_native veos3:6030 subscribe /Smash
 ```
 
 
 ## API
 
-```
+```python
 from gnmi.session import Session
 from gnmi.exceptions import GrpcDeadlineExceeded
 
