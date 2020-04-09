@@ -51,7 +51,7 @@ def parse_args():
                        choices=["json", "bytes", "proto", "ascii", "json-ietf"],
                        help="[json, bytes, proto, ascii, json-ietf]")
     group.add_argument("--prefix", default="", type=str,
-                       help="gRPC path prefix (default: none)")
+                       help="gRPC path prefix (default: <empty>)")
 
     group = parser.add_argument_group("Get options")
     group.add_argument("--get-type", type=str, default=None, choices=["config", "state", "operational"])
@@ -137,7 +137,7 @@ def main():
             print("    Organization: %s" % model["organization"])
     elif config.get("Get"):
         options: GetOptions = config.Get.options
-        paths = [Path_.from_string(p) for p in config.Get.paths]
+        paths = config.Get.paths
         response = sess.get(paths, options)
         for notif in response:
             prefix = notif.prefix
@@ -145,7 +145,7 @@ def main():
                 print("%s = %s" % (prefix + update.path, update.value))
     elif config.get("Subscribe"):
         sub_opts: SubscribeOptions = config.Subscribe.options
-        paths = [Path_.from_string(p) for p in config.Subscribe.paths]
+        paths = config.Subscribe.paths
         try:
             for resp in sess.subscribe(paths, options=sub_opts):
                 prefix = resp.update.prefix
