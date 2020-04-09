@@ -7,6 +7,6 @@ def test_config():
     #d = dict(conf)  
     #print(d)
     print(conf["subscribe"], type(conf["subscribe"]))
-    print(conf.subscribe.metadata)
-    print(conf.subscribe.subscription_list.subscription[0].path)
+    print(conf.metadata)
+    print(conf.subscribe.paths)
     pprint(conf.raw)
