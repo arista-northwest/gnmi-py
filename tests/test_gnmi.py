@@ -28,12 +28,16 @@ def gnmi_session(gnmi_target):
     return Session(gnmi_target, metadata=metadata)
 
 def test_gnmi_path(gnmi_paths):
-    for path in gnmi_paths + ["/path/with/some[key=val-ue][df=sdf]/more[key=ssss]"]:
-        pobj = Path_.from_string(path)
-        pstr = pobj.to_string()
+    
+    for path in gnmi_paths + [Path_.from_string("/path/with/some[key=val-ue][df=sdf]/more[key=ssss]")]:
+        #pobj = Path_.from_string(path)
+        pstr = path.to_string()
 
-        _ = [(e.name, e.key) for e in pobj.elements]
-        _ = pstr
+        print([(e.name, e.key) for e in path.elements])
+        print(pstr)
+        print(str(path))
+        print(path.raw)
+
 
 def test_gnmi_cap(gnmi_session):
     resp = gnmi_session.capabilities()
