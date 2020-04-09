@@ -7,7 +7,7 @@ import google.protobuf as _
 from gnmi.proto import gnmi_pb2 as pb  # type: ignore
 from gnmi.proto import gnmi_pb2_grpc  # type: ignore
 
-from typing import Optional, Iterator, List
+from typing import Optional, Iterator
 
 from gnmi import util
 from gnmi.messages import CapabilitiesResponse_, GetResponse_, Path_, Status_
@@ -81,7 +81,7 @@ class Session(object):
 
         return CapabilitiesResponse_(response)
 
-    def get(self, paths: List[Path_], options: GetOptions = {}) -> GetResponse_:
+    def get(self, paths: list, options: GetOptions = {}) -> GetResponse_:
         response: Optional[GetResponse_] = None
         prefix = self._parse_path(options.get("prefix"))
         encoding = util.get_gnmi_constant(options.get("encoding") or "json")
@@ -102,7 +102,7 @@ class Session(object):
 
     def set(self): ...
 
-    def subscribe(self, paths: List[Path_], options: SubscribeOptions = {}) -> Iterator[SubscribeResponse_]:
+    def subscribe(self, paths: list, options: SubscribeOptions = {}) -> Iterator[SubscribeResponse_]:
 
         aggregate = options.get("aggregate", False)
         encoding = util.get_gnmi_constant(options.get("encoding", "json"))
