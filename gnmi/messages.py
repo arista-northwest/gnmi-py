@@ -58,6 +58,9 @@ class Notification_(object):
     def __init__(self, notification):
         self.raw = notification
     
+    def __iter__(self):
+        return self.updates
+
     @property
     def prefix(self):
         return Path_(self.raw.prefix)
@@ -78,7 +81,7 @@ class GetResponse_(object):
 
     def __iter__(self):
         return self.notifications
-
+        
     @property
     def notifications(self):
         for notification in self.raw.notification:
@@ -89,6 +92,10 @@ class SubscribeResponse_(object):
     def __init__(self, response):
         self.raw = response
 
+    # @property
+    # def sync_response(self):
+    #     pass
+    
     @property
     def update(self):
         return Notification_(self.raw.update)
