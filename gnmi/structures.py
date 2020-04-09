@@ -4,6 +4,7 @@
 
 from typing import List, Optional, Tuple, Any
 from typing_extensions import TypedDict
+from gnmi.messages import Path_
 
 class CertificateStore(TypedDict):
     chain: str
@@ -19,7 +20,7 @@ Metadata = List[Tuple[str, Any]]
 
 
 class Options(TypedDict, total=False):
-    prefix: str
+    prefix: Any
     encoding: str
     #extension: list
 
