@@ -10,7 +10,7 @@ from typing import Any, List
 import google.protobuf as _
 import gnmi.proto.gnmi_pb2 as pb  # type: ignore
 
-from gnmi.messages import Path_
+# from gnmi.messages import Path_
 
 _RE_PATH_COMPONENT = re.compile(r'''
 ^
@@ -127,62 +127,6 @@ def parse_duration(duration):
     return val * multipliers[unit]
 
 
-def parse_path(path):
-    names = []
-    path = path.strip().strip("/")
-    if not path or path == "/":
-        names = []
-    else:
-        names = [re.sub(r"\\", "", n) for n in re.split(r"(?<!\\)/", path)]
-
-    elems = []
-    for name in names:
-        match = _RE_PATH_COMPONENT.search(name)
-        if not match:
-            raise ValueError("path component parse error: %s" % name)
-
-        if match.group("key") is not None:
-            tmp_key = {}
-            for keyval in re.findall(r"\[([^]]*)\]", name):
-                val = keyval.split("=")[-1]
-                tmp_key[keyval.split("=")[0]] = val
-
-            pname = match.group("pname")
-            elem = pb.PathElem(name=pname, key=tmp_key) # type: ignore
-            elems.append(elem)
-        else:
-            elems.append(pb.PathElem(name=name, key={})) # type: ignore
-
-    return pb.Path(elem=elems) # type: ignore
-
-
-def str_path(path):
-    strpath = "/"
-
-    if not path:
-        pass
-    elif len(path.elem) > 0:
-        strpath = str_path_v4(path)
-    elif len(path.element) > 0:
-        strpath = str_path_v3(path)
-    return strpath
-
-
-def str_path_v3(path):
-    return "/" + "/".join(path.element)
-
-
-def str_path_v4(path):
-    strpath = ""
-    for elem in path.elem:
-        strpath += "/" + escape_string(elem.name, "/")
-        for key, val in elem.key.items():
-            val = escape_string(val, "]")
-            strpath += "[" + key + "=" + val + "]"
-
-    return strpath
-
-
 def enable_debuging():
     os.environ['GRPC_TRACE'] = 'all'
     os.environ['GRPC_VERBOSITY'] = 'DEBUG'
@@ -190,18 +134,18 @@ def enable_debuging():
 def get_gnmi_constant(name):
     return getattr(pb, name.replace("-", "_").upper())
 
-def path_join(paths: List[Any]) -> Path_:
+# def path_join(paths: List[Any]) -> Path_:
 
     
 
-    for path in paths:
-        if isinstance(path, str):
-            path = Path_.from_string(path)
-        elif isinstance(path, pb.Path):
-            path = Path_(path)
-        elif isinstance(path, Path_):
-            pass
-        else:
-            raise ValueError("Failed to parse path: %s" % str(path))
+#     for path in paths:
+#         if isinstance(path, str):
+#             path = Path_.from_string(path)
+#         elif isinstance(path, pb.Path):
+#             path = Path_(path)
+#         elif isinstance(path, Path_):
+#             pass
+#         else:
+#             raise ValueError("Failed to parse path: %s" % str(path))
     
     #return "/".join([p.strip().strip("/") for p in list(args) ])

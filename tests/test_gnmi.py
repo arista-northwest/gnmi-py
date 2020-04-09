@@ -11,7 +11,7 @@ GNMI_PATHS = os.environ.get("GNMI_PATHS", "/system/config;/system/memory/state")
 
 @pytest.fixture()
 def gnmi_paths():
-    return GNMI_PATHS.split(";")
+    return [Path_.from_string(p) for p in GNMI_PATHS.split(";")]
 
 @pytest.fixture()
 def gnmi_target():
@@ -57,3 +57,4 @@ def test_gnmi_sub(gnmi_session, gnmi_paths):
             for update in resp.update.updates:
                 path = prefix + update.path
                 print(str(path), update.value)
+

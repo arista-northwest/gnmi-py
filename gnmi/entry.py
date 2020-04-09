@@ -9,6 +9,7 @@ from grpc import __version__ as grpc_version
 from google.protobuf import __version__ as pb_version
 
 from gnmi.config import Config
+from gnmi.messages import Path_
 from gnmi.session import Session
 from gnmi.structures import Options, GetOptions, SubscribeOptions, Target
 from gnmi.exceptions import GrpcError, GrpcDeadlineExceeded
@@ -136,17 +137,17 @@ def main():
             print("    Organization: %s" % model["organization"])
     elif config.get("Get"):
         options: GetOptions = config.Get.options
-
-        response = sess.get(config.Get.paths, options)
+        paths = [Path_.from_string(p) for p in config.Get.paths]
+        response = sess.get(paths, options)
         for notif in response:
+            prefix = notif.prefix
             for update in notif.updates:
-                print("%s = %s" % (update.path, update.value))
+                print("%s = %s" % (prefix + update.path, update.value))
     elif config.get("Subscribe"):
-        
         sub_opts: SubscribeOptions = config.Subscribe.options
-
+        paths = [Path_.from_string(p) for p in config.Subscribe.paths]
         try:
-            for resp in sess.subscribe(config.Subscribe.paths, options=sub_opts):
+            for resp in sess.subscribe(paths, options=sub_opts):
                 prefix = resp.update.prefix
                 for update in resp.update.updates:
                     path = prefix + update.path

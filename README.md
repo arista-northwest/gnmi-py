@@ -83,7 +83,7 @@ metadata = [
 ]
 
 paths = ["/config", "/memory/state"]
-target = ("rbf153", 6030)
+target = ("veos", 6030)
 sess = Session(target, metadata=metadata)
 
 for notif in sess.get(paths, options={"prefix": "/system"}):
@@ -92,9 +92,9 @@ for notif in sess.get(paths, options={"prefix": "/system"}):
         path = prefix + update.path
         print(path, update.value)
 
-paths = ["/processes/process"]
+paths = ["/system/processes/process"]
 try:
-    for resp in sess.subscribe(paths, options={"timeout": 5, "prefix": "/system"}):
+    for resp in sess.subscribe(paths, options={"timeout": 5}):
         prefix = resp.update.prefix
         for update in resp.update.updates:
             path = prefix + update.path

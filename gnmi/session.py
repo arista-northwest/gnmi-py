@@ -7,7 +7,7 @@ import google.protobuf as _
 from gnmi.proto import gnmi_pb2 as pb  # type: ignore
 from gnmi.proto import gnmi_pb2_grpc  # type: ignore
 
-from typing import Optional, Iterator
+from typing import Optional, Iterator, List
 
 from gnmi import util
 from gnmi.messages import CapabilitiesResponse_, GetResponse_, Path_, Status_
@@ -16,6 +16,7 @@ from gnmi.structures import Metadata, Target, CertificateStore, Options
 from gnmi.structures import GetOptions, SubscribeOptions
 from gnmi.constants import DEFAULT_GRPC_PORT, MODE_MAP, DATA_TYPE_MAP
 from gnmi.exceptions import GrpcError, GrpcDeadlineExceeded
+
 
 class Session(object):
 
@@ -60,21 +61,24 @@ class Session(object):
         _cr = pb.CapabilityRequest()  # type: ignore
 
         try:
-            response = self._stub.Capabilities(_cr, metadata=self.metadata)  
+            response = self._stub.Capabilities(_cr, metadata=self.metadata)
         except grpc.RpcError as rpcerr:
             status = Status_.from_call(rpcerr)
             raise GrpcError(status)
-        
+
         return CapabilitiesResponse_(response)
 
-    def get(self, paths: list, options: GetOptions = {}) -> GetResponse_:
+    def get(self, paths: List[Path_], options: GetOptions = {}) -> GetResponse_:
         response: Optional[GetResponse_] = None
-        prefix = util.parse_path(options.get("prefix") or "/")
+        prefix = options.get("prefix") or "/"
+        prefix = Path_.from_string(prefix)
+
         encoding = util.get_gnmi_constant(options.get("encoding") or "json")
         type_ = DATA_TYPE_MAP.index(options.get("type") or "all")
-        paths = [util.parse_path(path) for path in paths]
 
-        _gr = pb.GetRequest(path=paths, prefix=prefix, encoding=encoding,
+        paths = [path.raw for path in paths]
+
+        _gr = pb.GetRequest(path=paths, prefix=prefix.raw, encoding=encoding,
                             type=type_)  # type: ignore
 
         try:
@@ -82,12 +86,12 @@ class Session(object):
         except grpc.RpcError as rpcerr:
             status = Status_.from_call(rpcerr)
             raise GrpcError(status)
-        
+
         return GetResponse_(response)
 
     def set(self): ...
 
-    def subscribe(self, paths: list, options: SubscribeOptions = {}) -> Iterator[SubscribeResponse_]:
+    def subscribe(self, paths: List[Path_], options: SubscribeOptions = {}) -> Iterator[SubscribeResponse_]:
 
         aggregate = options.get("aggregate", False)
         encoding = util.get_gnmi_constant(options.get("encoding", "json"))
@@ -100,8 +104,6 @@ class Session(object):
         suppress = options.get("suppress", False)
         timeout = options.get("timeout", None)
         use_alias = options.get("use_alias", False)
-
-        paths = [Path_.from_string(path) for path in paths]
 
         subs = []
         for path in paths:
