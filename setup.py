@@ -7,12 +7,22 @@ import os
 import re
 from setuptools import setup, find_packages
 
+# here = path.abspath(path.dirname(__file__))
+version = None
+long_description = None
+
 with io.open('gnmi/__init__.py', 'rt', encoding='utf8') as f:
     version = re.search(r'__version__ = \"(.*?)\"', f.read()).group(1)
+
+with open(os.path.join('README.md'), encoding='utf-8') as f:
+    long_description = f.read()
 
 setup(
     name='gnmi-py',
     version=version,
+    description="gNMI Client",
+    long_description=long_description,
+    long_description_content_type='text/markdown',
     py_modules=['gnmi'],
     install_requires=[
         "grpcio==1.28.1",
@@ -22,7 +32,7 @@ setup(
         "typing-extensions==3.7.4.2"
     ],
     classifiers=[
-        'Development Status :: 1 - Planning',
+        'Development Status :: 4 - Beta',
         'Environment :: Console',
         'Intended Audience :: Information Technology',
         'License :: OSI Approved :: MIT License',
