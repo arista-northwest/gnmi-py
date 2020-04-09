@@ -15,9 +15,11 @@ setup(
     version=version,
     py_modules=['gnmi'],
     install_requires=[
-        'grpcio>=1.18.0',
-        'grpcio-tools>=1.15.0',
-        'protobuf>=3.6.1'
+        "grpcio==1.28.1",
+        "grpcio-tools==1.28.1",
+        "protobuf==3.11.3",
+        "PyYAML==5.3.1",
+        "typing-extensions==3.7.4.2"
     ],
     classifiers=[
         'Development Status :: 1 - Planning',
