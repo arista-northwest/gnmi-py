@@ -193,6 +193,7 @@ class Session(object):
         r"""Set set, update or delete value from specified path
 
         Usage::
+
             In [3]: updates = [("/system/config/hostname", "minemeow")]
             In [4]: sess.set(updates=updates)
 
