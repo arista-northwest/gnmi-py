@@ -11,21 +11,129 @@ gNMI messags wrappers
 
 import re
 import collections
+import json
+import sys
 
-from typing import List
+from abc import ABCMeta, abstractmethod
+from typing import List, Tuple, Any
+
 import google.protobuf as _
 import grpc
 
 from gnmi.proto import gnmi_pb2 as pb  # type: ignore
 from gnmi import util
 
-class CapabilitiesResponse_(object):
+
+def decode_bytes(bites, encoding='utf-8'):
+    # python 3.6+ does this automatically
+    if sys.version_info < (3, 6, 0):
+        return bites.decode(encoding)
+    return bites
+
+
+def escape_string(string, escape):
+    result = ""
+    for character in string:
+        if character in (escape, "\\"):
+            result += "\\"
+        result += character
+    return result
+
+
+def extract_value(update):
+
+    val = None
+
+    if not update:
+        return val
+
+    try:
+        val = extract_value_v4(update.val)
+    except ValueError:
+        val = extract_value_v3(update.value)
+
+    return val
+
+
+def extract_value_v3(value):
+    val = None
+    if value.type in (pb.JSON_IETF, pb.JSON): # type: ignore
+        val = json.loads(decode_bytes(value.value))
+    elif value.type in (pb.BYTES, pb.PROTO): # type: ignore
+        val = value.value
+    elif value.type == pb.ASCII: # type: ignore
+        val = str(value.value)
+    else:
+        raise ValueError("Unhandled type of value %s" % str(value))
+    return val
+
+
+def extract_value_v4(value):
+    val = None
+    if value.HasField("any_val"):
+        val = value.any_val
+    elif value.HasField("ascii_val"):
+        val = value.ascii_val
+    elif value.HasField("bool_val"):
+        val = value.bool_val
+    elif value.HasField("bytes_val"):
+        val = value.bytes_val
+    elif value.HasField("decimal_val"):
+        val = value.decimal_val
+    elif value.HasField("float_val"):
+        val = value.float_val
+    elif value.HasField("int_val"):
+        val = value.int_val
+    elif value.HasField("json_ietf_val"):
+        val = json.loads(decode_bytes(value.json_ietf_val))
+    elif value.HasField("json_val"):
+        val = json.loads(decode_bytes(value.json_val))
+    elif value.HasField("leaflist_val"):
+        lst = []
+        for elem in value.leaflist_val.element:
+            lst.append(extract_value_v4(elem))
+        val = lst
+    elif value.HasField("proto_bytes"):
+        val = value.proto_bytes
+    elif value.HasField("string_val"):
+        val = value.string_val
+    elif value.HasField("uint_val"):
+        val = value.uint_val
+    else:
+        raise ValueError("Unhandled type of value %s" % str(value))
+
+    return val
+
+def _cast_gnmi_type(value, gnmi_type):
+    pass
+    
+class BaseMessage(metaclass=ABCMeta):
+
+    def __init__(self, message):
+        self.raw = message
+
+class IterableMessage(BaseMessage):
+
+    def __iter__(self):
+        return self.iterate()
+
+    @abstractmethod
+    def iterate(self):
+        yield from ()
+
+    def collect(self):
+        """Collect"""
+        collected = []
+        for item in self:
+            if isinstance(item, IterableMessage):
+                item = item.collect()
+            collected.append(item)
+        return collected
+
+class CapabilitiesResponse_(BaseMessage):
     r"""Represents a gnmi.CapabilitiesResponse message
 
     """
-
-    def __init__(self, response):
-        self.raw = response
 
     @property
     def supported_models(self):
@@ -47,36 +155,70 @@ class CapabilitiesResponse_(object):
         return self.raw.gNMI_version
     version = gnmi_version
 
-class Update_(object):
+
+class Update_(BaseMessage):
     r"""Represents a gnmi.Update message
 
     """
 
-    def __init__(self, update):
-        self.raw = update
+    _TYPED_VALUE_MAP = {
+        bool: 'bool_val',
+        dict: 'json_ietf_val',
+        int: 'int_val',
+        float: 'float_val',
+        str: 'string_val'
+    }
 
+    _TYPE_HANDLER_MAP = {
+        'bool_val': lambda value: True if value else False,
+        'json_ietf_val': lambda value: json.dumps(value).encode(),
+        'int_val': int,
+        'float_val': float,
+        'string_val': str
+    }
+    
     @property
     def path(self):
         return Path_(self.raw.path)
 
     @property
     def value(self):
-        return util.extract_value(self.raw)
+        return extract_value(self.raw)
     val = value
-
+    
     @property
     def duplicates(self):
         return self.raw.duplicates
 
-class Notification_(object):
+    @classmethod
+    def from_keyval(cls, keyval: Tuple[str, Any], forced_type: str = ""):
+        path, value = keyval
+
+        path = Path_.from_string(path)
+        typed_value = pb.TypedValue()
+
+        type_: str = forced_type
+        func = lambda v: v
+        
+        if forced_type:
+            func = cls._TYPE_HANDLER_MAP[forced_type]
+        else:
+            type_ = cls._TYPED_VALUE_MAP.get(type(value))
+            if not type_:
+                raise ValueError("Invalid type: %s for %s" % type(value), str(value))
+            func = cls._TYPE_HANDLER_MAP[type_]
+        
+        setattr(typed_value, type_, func(value))
+        
+        return cls(pb.Update(path=path.raw, val=typed_value))
+
+
+class Notification_(IterableMessage):
     r"""Represents a gnmi.Notification message
 
     """
-
-    def __init__(self, notification):
-        self.raw = notification
     
-    def __iter__(self):
+    def iterate(self):
         return self.updates
 
     @property
@@ -89,34 +231,62 @@ class Notification_(object):
 
     @property
     def updates(self):
-        
         for update in self.raw.update:
             yield Update_(update)
 
-class GetResponse_(object):
+class GetResponse_(IterableMessage):
     r"""Represents a gnmi.GetResponse message
 
     """
 
-    def __init__(self, response):
-        self.raw = response
-
-    def __iter__(self):
+    def iterate(self):
         return self.notifications
-        
+    
     @property
     def notifications(self):
         for notification in self.raw.notification:
             yield Notification_(notification)
 
+class UpdateResult_(BaseMessage):
+    _OPERATION = [
+        "INVALID",
+        "DELETE",
+        "REPLACE",
+        "UPDATE"
+    ]
+    
+    def __str__(self):
+        return "%s %s" % (self.operation, self.path)
+    
+    @property
+    def op(self):
+        #return self._OPERATION.index(self.raw.operation) 
+        
+        return self._OPERATION[self.raw.op]
+    operation = op
+    
+    @property
+    def path(self):
+        return Path_(self.raw.path)
 
-class SubscribeResponse_(object):
+class SetResponse_(IterableMessage):
+
+    def iterate(self):
+        return self.responses
+    
+    @property
+    def timetamp(self):
+        pass
+
+    @property
+    def responses(self):
+        for resp in self.raw.response:
+            yield UpdateResult_(resp)
+
+class SubscribeResponse_(BaseMessage):
     r"""Represents a gnmi.SubscribeResponse message
 
     """
-
-    def __init__(self, response):
-        self.raw = response
 
     # @property
     # def sync_response(self):
@@ -126,20 +296,23 @@ class SubscribeResponse_(object):
     def update(self):
         return Notification_(self.raw.update)
 
-class PathElem_(object):
+class PathElem_(BaseMessage):
     r"""Represents a gnmi.PathElem message
 
     """
+    
+    @property
+    def key(self):
+        if hasattr(self.raw, "key"):
+            return self.raw.key 
+        return {}
 
-    def __init__(self, elem):
-        self.raw = elem
-        self.key = {}
-        if hasattr(elem, "key"):
-            self.key = self.raw.key
-        self.name = self.raw.name
+    @property
+    def name(self):
+        return self.raw.name
 
-class Path_(object):
-    r"""Represents a gnmi.Pasth message
+class Path_(BaseMessage):
+    r"""Represents a gnmi.Path message
 
     """
 
@@ -153,9 +326,6 @@ class Path_(object):
 \])?$
 ''', re.VERBOSE)
     
-    def __init__(self, path):
-        self.raw = path
-
     def __str__(self):
         return self.to_string()
     
@@ -194,9 +364,9 @@ class Path_(object):
 
         path = ""
         for elem in self.elements:
-            path += "/" + util.escape_string(elem.name, "/")
+            path += "/" + escape_string(elem.name, "/")
             for key, val in elem.key.items():
-                val = util.escape_string(val, "]")
+                val = escape_string(val, "]")
                 path += "[" + key + "=" + val + "]"
 
         if self.origin:
