@@ -194,10 +194,14 @@ class Session(object):
 
         Usage::
             In [3]: updates = [("/system/config/hostname", "minemeow")]
-            In [4]: sess.set(updates, "replace")
+            In [4]: sess.set(updates=updates)
 
         :param updates: List of updates
         :type updates: list
+        :param replacements: List of replacements
+        :type replacements: list
+        :param deletes: List of deletes
+        :type deletes: list
         :param options:
         :type options: gnmi.structures.Options
         :rtype: gnmi.messages.SetResponse_
