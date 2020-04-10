@@ -1,6 +1,13 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2020 Arista Networks, Inc.  All rights reserved.
 # Arista Networks, Inc. Confidential and Proprietary.
+"""
+gnmi.messages
+~~~~~~~~~~~~~~~~
+
+gNMI messags wrappers
+
+"""
 
 import re
 import collections
@@ -13,6 +20,9 @@ from gnmi.proto import gnmi_pb2 as pb  # type: ignore
 from gnmi import util
 
 class CapabilitiesResponse_(object):
+    r"""Represents a gnmi.CapabilitiesResponse message
+
+    """
 
     def __init__(self, response):
         self.raw = response
@@ -38,6 +48,10 @@ class CapabilitiesResponse_(object):
     version = gnmi_version
 
 class Update_(object):
+    r"""Represents a gnmi.Update message
+
+    """
+
     def __init__(self, update):
         self.raw = update
 
@@ -55,6 +69,10 @@ class Update_(object):
         return self.raw.duplicates
 
 class Notification_(object):
+    r"""Represents a gnmi.Notification message
+
+    """
+
     def __init__(self, notification):
         self.raw = notification
     
@@ -76,6 +94,10 @@ class Notification_(object):
             yield Update_(update)
 
 class GetResponse_(object):
+    r"""Represents a gnmi.GetResponse message
+
+    """
+
     def __init__(self, response):
         self.raw = response
 
@@ -89,6 +111,10 @@ class GetResponse_(object):
 
 
 class SubscribeResponse_(object):
+    r"""Represents a gnmi.SubscribeResponse message
+
+    """
+
     def __init__(self, response):
         self.raw = response
 
@@ -101,6 +127,10 @@ class SubscribeResponse_(object):
         return Notification_(self.raw.update)
 
 class PathElem_(object):
+    r"""Represents a gnmi.PathElem message
+
+    """
+
     def __init__(self, elem):
         self.raw = elem
         self.key = {}
@@ -109,6 +139,10 @@ class PathElem_(object):
         self.name = self.raw.name
 
 class Path_(object):
+    r"""Represents a gnmi.Pasth message
+
+    """
+
     RE_ORIGIN = re.compile(r"(?:(?P<origin>[\w\-]+)?:)?(?P<path>\S+)$")
     RE_COMPONENT = re.compile(r'''
 ^

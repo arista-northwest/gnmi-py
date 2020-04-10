@@ -1,7 +1,13 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2020 Arista Networks, Inc.  All rights reserved.
 # Arista Networks, Inc. Confidential and Proprietary.
+"""
+gnmi.session
+~~~~~~~~~~~~~~~~
 
+Implementation if gnmi.session API
+
+"""
 import grpc
 import google.protobuf as _
 from gnmi.proto import gnmi_pb2 as pb  # type: ignore
@@ -19,32 +25,13 @@ from gnmi.exceptions import GrpcError, GrpcDeadlineExceeded
 
 
 class Session(object):
-    """
-    Represents a gNMI session
+    r"""Represents a gNMI session
 
-    ...
+    Basic Usage:: 
 
-    Attributes
-    ----------
-    target : Target
-        Tuple containing hostname and port
-    addr : str
-        Target represented as a <host>:<port>
-
-    Methods
-    -------
-    capabilities(options: Options = {})
-        Get gNMI capbabilities from target
-    def get(paths: list, options: GetOptions = {})
-        Get one or more paths from target
-    subscribe(paths: list, options: SubscribeOptions = {})
-        Subscribe to paths from target
-
-    Examples
-    --------
-    In [1]: from gnmi.session import Session
-    In [2]: sess = Session(("veos3", 6030), 
-    ...:     metadata=[("username", "admin"), ("password", "")])
+        In [1]: from gnmi.session import Session
+        In [2]: sess = Session(("veos3", 6030), 
+        ...:     metadata=[("username", "admin"), ("password", "")])
 
     """
 
@@ -97,39 +84,33 @@ class Session(object):
         return path
     
     def capabilities(self) -> CapabilitiesResponse_:
-        """
-        Discover capabilities of the target
+        r"""Discover capabilities of the target
+
+        Usage::
+    
+            In [3]: resp = sess.capabilities()
+
+            In [4]: resp.gnmi_version                                                                      
+            Out[4]: '0.7.0'
+
+            In [5]: resp.supported_encodings                                                               
+            Out[5]: [0, 4, 3]
+
+            In [7]: for model in resp.supported_models: 
+                ...:     print(model["name"], model["version"])  
+                ...:     # print(model["organization])                                                                                  
+            openconfig-system-logging 0.3.1
+            openconfig-messages 0.0.1
+            openconfig-platform-types 1.0.0
+            arista-system-augments 
+            openconfig-if-types 0.2.1
+            openconfig-acl 1.0.2
+            arista-intf-augments 
+            openconfig-pf-srte 0.1.1
+            openconfig-bgp 6.0.0
+            ...
         
-        Returns
-        -------
-        out : CapabilitiesResponse_
-            Object containing gNMI version, supported encodings and models from
-            the target
-
-        Examples
-        --------          
-        In [3]: resp = sess.capabilities()
-
-        In [4]: resp.gnmi_version                                                                      
-        Out[4]: '0.7.0'
-
-        In [5]: resp.supported_encodings                                                               
-        Out[5]: [0, 4, 3]
-
-        In [7]: for model in resp.supported_models: 
-            ...:     print(model["name"], model["version"])  
-            ...:     # print(model["organization])                                                                                  
-        openconfig-system-logging 0.3.1
-        openconfig-messages 0.0.1
-        openconfig-platform-types 1.0.0
-        arista-system-augments 
-        openconfig-if-types 0.2.1
-        openconfig-acl 1.0.2
-        arista-intf-augments 
-        openconfig-pf-srte 0.1.1
-        openconfig-bgp 6.0.0
-        ...
-        
+        :rtype: gnmi.messages.CapabilitiesResponse_
         """
 
         # if options.get("extension"):
@@ -146,39 +127,33 @@ class Session(object):
         return CapabilitiesResponse_(response)
 
     def get(self, paths: list, options: GetOptions = {}) -> GetResponse_:
-        """
-        Get snapshot of state from the target
+        r"""Get snapshot of state from the target
 
-        Parameters
-        ----------
+        Usage::
 
-        paths: list
-        options: GetOptions or dict
+            In [8]: paths = [ 
+            ...:     "/system/config/hostname", 
+            ...:     "/system/memory/state/physical", 
+            ...:     "/system/memory/state/reserved" 
+            ...: ]
+            In [9]: options={"prefix": "/", "encoding": "json"}                                            
 
-        Returns
-        -------
+            In [10]: resp = sess.get(paths, options)                                                        
+            
+            In [11]: for notif in resp: 
+                ...:     for update in notif: 
+                ...:         print(update.path, update.val) 
+                ...:                                                                                                      
+            /system/config/hostname veos3-782f
+            /system/memory/state/physical 2062848000
+            /system/memory/state/reserved 2007666688
 
-        out : GetResponse_
-            Wrapper of gnmi_pb2.GetResponse
+        :param paths: List of paths
+        :type paths: list
+        :param options:
+        :type options: gnmi.structures.GetOptions
 
-        Examples
-        --------
-        In [8]: paths = [ 
-        ...:     "/system/config/hostname", 
-        ...:     "/system/memory/state/physical", 
-        ...:     "/system/memory/state/reserved" 
-        ...: ]
-        In [9]: options={"prefix": "/", "encoding": "json"}                                            
-
-        In [10]: resp = sess.get(paths, options)                                                        
-        
-        In [11]: for notif in resp: 
-            ...:     for update in notif: 
-            ...:         print(update.path, update.val) 
-            ...:                                                                                                      
-        /system/config/hostname veos3-782f
-        /system/memory/state/physical 2062848000
-        /system/memory/state/reserved 2007666688
+        :rtype: gnmi.messages.GetResponse_
         """
 
         response: Optional[GetResponse_] = None
@@ -202,61 +177,52 @@ class Session(object):
     def set(self): ...
 
     def subscribe(self, paths: list, options: SubscribeOptions = {}) -> Iterator[SubscribeResponse_]:
-        """
-        Subscribe to state updates from the target
+        r"""Subscribe to state updates from the target
 
-        Parameters
-        ----------
+        Usage::
 
-        paths: list
-        options: SubscribeOptions or dict
+            In [57]: from gnmi.exceptions import GrpcDeadlineExceeded  
+            In [58]: paths = [ 
+            ...:     "/interface[name=Management1]", 
+            ...:     "/interface[name=Ethernet1]" 
+            ...: ]                                                                                                    
 
-        Returns
-        -------
+            In [59]: options = {
+            ...:     "prefix": "/interfaces", 
+            ...:     "mode": "stream",
+            ...:     "submode": "on-change",
+            ...:     "timeout": 5
+            ...:  }          
 
-        out : SubscribeResponse_
-            Wrapper of gnmi_pb2.SubscribeResponse
+            In [60]: responses = sess.subscribe(paths, options)                                                           
 
-        Examples
-        --------
-
-        In [57]: from gnmi.exceptions import GrpcDeadlineExceeded  
-        In [58]: paths = [ 
-        ...:     "/interface[name=Management1]", 
-        ...:     "/interface[name=Ethernet1]" 
-        ...: ]                                                                                                    
-
-        In [59]: options = {
-        ...:     "prefix": "/interfaces", 
-        ...:     "mode": "stream",
-        ...:     "submode": "on-change",
-        ...:     "timeout": 5
-        ...:  }          
-
-        In [60]: responses = sess.subscribe(paths, options)                                                           
-
-        In [61]: try: 
-            ...:     for resp in responses: 
-            ...:         prefix = resp.update.prefix 
-            ...:         for update in resp.update.updates: 
-            ...:             path = prefix + update.path 
-            ...:             print(str(path), update.value) 
-            ...: except GrpcDeadlineExceeded: 
-            ...:     pass 
-            ...:
-        /interfaces/interface[name=Management1]/config/description 
-        /interfaces/interface[name=Management1]/config/enabled True
-        /interfaces/interface[name=Management1]/config/load-interval 300
-        /interfaces/interface[name=Management1]/config/loopback-mode False
-        <output-omitted>
-        /interfaces/interface[name=Ethernet1]/config/description 
-        /interfaces/interface[name=Ethernet1]/config/enabled True
-        /interfaces/interface[name=Ethernet1]/config/load-interval 300
-        /interfaces/interface[name=Ethernet1]/config/loopback-mode False
-        /interfaces/interface[name=Ethernet1]/config/mtu 0
-        /interfaces/interface[name=Ethernet1]/config/name Ethernet1
-        <output-omitted>
-    
+            In [61]: try: 
+                ...:     for resp in responses: 
+                ...:         prefix = resp.update.prefix 
+                ...:         for update in resp.update.updates: 
+                ...:             path = prefix + update.path 
+                ...:             print(str(path), update.value) 
+                ...: except GrpcDeadlineExceeded: 
+                ...:     pass 
+                ...:
+            /interfaces/interface[name=Management1]/config/description 
+            /interfaces/interface[name=Management1]/config/enabled True
+            /interfaces/interface[name=Management1]/config/load-interval 300
+            /interfaces/interface[name=Management1]/config/loopback-mode False
+            <output-omitted>
+            /interfaces/interface[name=Ethernet1]/config/description 
+            /interfaces/interface[name=Ethernet1]/config/enabled True
+            /interfaces/interface[name=Ethernet1]/config/load-interval 300
+            /interfaces/interface[name=Ethernet1]/config/loopback-mode False
+            /interfaces/interface[name=Ethernet1]/config/mtu 0
+            /interfaces/interface[name=Ethernet1]/config/name Ethernet1
+            <output-omitted>
+        
+        :param paths: List of paths
+        :type paths: list
+        :param options:
+        :type options: gnmi.structures.GetOptions
+        :rtype: gnmi.messages.SubscribeResponse_
         """
         aggregate = options.get("aggregate", False)
         encoding = util.get_gnmi_constant(options.get("encoding", "json"))

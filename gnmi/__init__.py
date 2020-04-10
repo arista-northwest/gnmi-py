@@ -9,3 +9,5 @@ __version__ = "0.2.7"
 if sys.version_info < (3, 6):
     # see: https://devguide.python.org/devcycle/
     raise ValueError("Python 3.6+ is required")
+
+from gnmi.session import Session
