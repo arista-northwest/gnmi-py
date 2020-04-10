@@ -8,6 +8,10 @@ gnmi.session
 Implementation if gnmi.session API
 
 """
+
+import functools
+from gnmi.proto.gnmi_pb2 import SetResponse
+
 import grpc
 import google.protobuf as _
 from gnmi.proto import gnmi_pb2 as pb  # type: ignore
@@ -16,8 +20,8 @@ from gnmi.proto import gnmi_pb2_grpc  # type: ignore
 from typing import Optional, Iterator
 
 from gnmi import util
-from gnmi.messages import CapabilitiesResponse_, GetResponse_, Path_, Status_
-from gnmi.messages import SubscribeResponse_
+from gnmi.messages import CapabilitiesResponse_, GetResponse_, Path_, Status_, Update_
+from gnmi.messages import SubscribeResponse_, SetResponse_
 from gnmi.structures import Metadata, Target, CertificateStore, Options
 from gnmi.structures import GetOptions, SubscribeOptions
 from gnmi.constants import DEFAULT_GRPC_PORT, MODE_MAP, DATA_TYPE_MAP
@@ -70,18 +74,29 @@ class Session(object):
     def _insecure_channel(self):
         return grpc.insecure_channel(self.addr)  # type: ignore
 
+    def _build_update(self, update):
+        if isinstance(update, (Update_, Path_)):
+            update = update
+        if isinstance(update, str):
+            update = Path_.from_string(update)
+        elif isinstance(update, (list, tuple)):
+            update = Update_.from_keyval(update)
+        
+        return update.raw
+    
     def _parse_path(self, path):
         if not path:
-            path = Path_.from_string(path).raw
+            path = Path_.from_string(path)
         elif isinstance(path, Path_):
-            path = path.raw
+            path = path
         elif isinstance(path, str):
-            path = Path_.from_string(path).raw
+            path = Path_.from_string(path)
         elif isinstance(path, (list, tuple)):
-            path = Path_.from_string("/".join(path)).raw
+            path = Path_.from_string("/".join(path))
         else:
             raise ValueError("Failed to parse path: %s" % str(path))
-        return path
+        
+        return path.raw
     
     def capabilities(self) -> CapabilitiesResponse_:
         r"""Discover capabilities of the target
@@ -174,7 +189,39 @@ class Session(object):
 
         return GetResponse_(response)
 
-    def set(self): ...
+    def set(self, updates: list = [], deletes: list = [], replacements: list = [], options: Options = {}) -> SetResponse_:
+        r"""Set set, update or delete value from specified path
+
+        Usage::
+            In [3]: updates = [("/system/config/hostname", "minemeow")]
+            In [4]: sess.set(updates, "replace")
+
+        :param updates: List of updates
+        :type updates: list
+        :param options:
+        :type options: gnmi.structures.Options
+        :rtype: gnmi.messages.SetResponse_
+        """
+
+        prefix = self._parse_path(options.get("prefix"))
+        
+        setargs = dict(prefix=prefix, delete=[], replace=[], update=[])
+
+        for delete in deletes:
+            setargs["delete"].append(self._build_update(delete))
+        for replace in replacements:
+            setargs["replace"].append(self._build_update(replace))
+        for update in updates:
+            setargs["update"].append(self._build_update(update))
+
+
+        _sr = pb.SetRequest(**setargs)
+
+        try:
+            return SetResponse_(self._stub.Set(_sr, metadata=self.metadata))
+        except grpc.RpcError as rpcerr:
+            status = Status_.from_call(rpcerr)
+            raise GrpcError(status)
 
     def subscribe(self, paths: list, options: SubscribeOptions = {}) -> Iterator[SubscribeResponse_]:
         r"""Subscribe to state updates from the target
@@ -224,6 +271,7 @@ class Session(object):
         :type options: gnmi.structures.GetOptions
         :rtype: gnmi.messages.SubscribeResponse_
         """
+
         aggregate = options.get("aggregate", False)
         encoding = util.get_gnmi_constant(options.get("encoding", "json"))
         heartbeat = options.get("heartbeat", None)
