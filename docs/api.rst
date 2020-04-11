@@ -1,13 +1,5 @@
-
-Messages
+API
 ------------
 
-.. automodule:: gnmi.messages
-    :inherited-members:
-
-
-Session
-------------
-
-.. automodule:: gnmi.session
+.. automodule:: gnmi.api
     :inherited-members:

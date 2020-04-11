@@ -19,7 +19,7 @@ import gnmi
 # -- Project information -----------------------------------------------------
 
 project = 'gNMI-py'
-copyright = '2020, Arista Inc.'
+copyright = '2020, Arista Inc'
 author = 'Jesse Mather'
 
 # The full version, including alpha/beta/rc tags

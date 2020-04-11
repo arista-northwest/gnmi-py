@@ -18,6 +18,22 @@ API
 
    api
 
+Messages
+===================
+
+.. toctree::
+   :maxdepth: 2
+
+   messages
+
+Session 
+===================
+
+.. toctree::
+   :maxdepth: 2
+
+   session
+
 
 Indices and tables
 ==================
