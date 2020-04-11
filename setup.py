@@ -45,7 +45,7 @@ setup(
     ],
     packages = find_packages(),
     #package_data={'': ['settings.yml']},
-    url = "https://github.com/arista-northwest1/gnmi-py",
+    url = "https://github.com/arista-northwest/gnmi-py",
     license = "MIT Licesnse",
     entry_points = {
         'console_scripts': [
