@@ -33,7 +33,7 @@ def test_cap(session):
 
 
 def test_get(session, paths):
-    resp = session.get(paths)
+    resp = session.get(paths, options={})
     for notif in resp:
         assert notif.timestamp is not None
         for update in notif.updates:
@@ -55,7 +55,6 @@ def test_sub(session, paths):
 def test_set(session):
     path = "/system/config/hostname"
 
-    
     def _get_hostname():
         return session.get([path]).collect()[0][0].value
 

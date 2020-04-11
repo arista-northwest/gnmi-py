@@ -43,12 +43,12 @@ class Session(object):
                  target: Target,
                  metadata: Metadata = [],
                  certificates: CertificateStore = None,
-                 host_override: str = ""):
+                 override: str = None):
 
         self._target = target
         self.metadata = metadata
         self._certificates = certificates
-        self._host_override = host_override
+        self._host_override = override
 
         self._credentials = self._create_credentials()
         self._channel = self._create_channel()
@@ -189,7 +189,7 @@ class Session(object):
 
         return GetResponse_(response)
 
-    def set(self, updates: list = [], deletes: list = [], replacements: list = [], options: Options = {}) -> SetResponse_:
+    def set(self, deletes: list = [], replacements: list = [], updates: list = [], options: Options = {}) -> SetResponse_:
         r"""Set set, update or delete value from specified path
 
         Usage::
