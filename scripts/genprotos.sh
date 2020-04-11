@@ -1,22 +1,21 @@
 #!/usr/bin/env bash
-echo "Updating gNMI amd gRPC sub-modules..."
+# echo "Updating gNMI amd gRPC sub-modules..."
 # git submodule add https://github.com/openconfig/gnmi.git submodule/openconfig
 # git submodule add https://github.com/grpc/grpc.git submodule/grpc
-git submodule update --remote
+# git submodule update --remote
+# SUBMODULE_DIR=submodule
 
-SUBMODULE_DIR=submodule
-
-WORKDIR=${TMPDIR}/proto
+WORKDIR=build/proto
 
 mkdir -p ${WORKDIR}
 
+# Downloading protos
+wget https://raw.githubusercontent.com/openconfig/gnmi/master/proto/gnmi/gnmi.proto -O ${WORKDIR}/gnmi.proto
+wget https://raw.githubusercontent.com/openconfig/gnmi/master/proto/gnmi_ext/gnmi_ext.proto -O ${WORKDIR}/gnmi_ext.proto
+wget https://raw.githubusercontent.com/grpc/grpc/master/src/proto/grpc/status/status.proto -O ${WORKDIR}/status.proto
+
 echo "Fixing proto imports..."
-sed 's/github.com\/openconfig\/gnmi\/proto\/gnmi_ext\///g' \
-  submodule/openconfig/proto/gnmi/gnmi.proto > ${WORKDIR}/gnmi.proto
-
-cp submodule/openconfig/proto/gnmi_ext/gnmi_ext.proto ${WORKDIR}
-
-cp submodule/grpc/src/proto/grpc/status/status.proto ${WORKDIR}
+sed -i .bak 's/github.com\/openconfig\/gnmi\/proto\/gnmi_ext\///g' ${WORKDIR}/gnmi.proto
 
 echo "Generating python modules..."
 python3 -m grpc_tools.protoc \
@@ -32,6 +31,6 @@ sed -i .bak 's/import gnmi_ext_pb2/from . import gnmi_ext_pb2/' ${WORKDIR}/gnmi_
 echo "Copying modules to project..."
 cp ${WORKDIR}/*.py gnmi/proto/
 
-echo "Cleaning up..."
-rm ${WORKDIR}/*
-rmdir ${WORKDIR}
+# echo "Cleaning up..."
+# rm ${WORKDIR}/*
+# rmdir ${WORKDIR}
