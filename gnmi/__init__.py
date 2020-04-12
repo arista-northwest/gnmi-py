@@ -11,4 +11,4 @@ if sys.version_info < (3, 6):
     raise ValueError("Python 3.6+ is required")
 
 from gnmi.session import Session
-from gnmi.api import *
+from gnmi.api import capabilites, delete, get, replace, subscribe, update
