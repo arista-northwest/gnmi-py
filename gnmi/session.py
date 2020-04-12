@@ -9,9 +9,6 @@ Implementation if gnmi.session API
 
 """
 
-import functools
-from gnmi.proto.gnmi_pb2 import SetResponse
-
 import grpc
 import google.protobuf as _
 from gnmi.proto import gnmi_pb2 as pb  # type: ignore
@@ -19,11 +16,13 @@ from gnmi.proto import gnmi_pb2_grpc  # type: ignore
 
 from typing import Optional, Iterator
 
+import ssl
+
 from gnmi import util
 from gnmi.messages import CapabilitiesResponse_, GetResponse_, Path_, Status_, Update_
 from gnmi.messages import SubscribeResponse_, SetResponse_
 from gnmi.structures import Metadata, Target, CertificateStore, Options
-from gnmi.structures import GetOptions, SubscribeOptions
+from gnmi.structures import GetOptions, GrpcOptions, SubscribeOptions
 from gnmi.constants import DEFAULT_GRPC_PORT, MODE_MAP, DATA_TYPE_MAP
 from gnmi.exceptions import GrpcError, GrpcDeadlineExceeded
 
@@ -42,38 +41,48 @@ class Session(object):
     def __init__(self,
                  target: Target,
                  metadata: Metadata = [],
-                 certificates: CertificateStore = None,
-                 override: str = None):
+                 secure: bool = False,
+                 certificates: CertificateStore = {},
+                 grpc_options: GrpcOptions = {}):
 
-        self._target = target
-        self.metadata = metadata
+       
         self._certificates = certificates
-        self._host_override = override
+        self._grpc_options = grpc_options
+        self._secure = secure
+        self.target = target
+        self.metadata = metadata
 
-        self._credentials = self._create_credentials()
-        self._channel = self._create_channel()
+        self._channel = self._new_channel()
 
         self._stub = gnmi_pb2_grpc.gNMIStub(self._channel)  # type: ignore
 
     @property
-    def target(self) -> Target:
-        _t: Target = (self._target[0], self._target[1] or DEFAULT_GRPC_PORT)
-        return _t
-
-    @property
-    def addr(self):
+    def hostaddr(self):
         return "%s:%d" % self.target
 
-    def _create_credentials(self):
-        return []
+    def _new_channel(self):
+        root_cert: bytes
+        private_key: Optional[bytes]
+        chain: Optional[bytes]
 
-    def _create_channel(self):
-        # TODO: Implement secure channels
-        return self._insecure_channel()
+        if not self._secure:
+            return grpc.insecure_channel(self.hostaddr)
 
-    def _insecure_channel(self):
-        return grpc.insecure_channel(self.addr)  # type: ignore
+        if not self._certificates.get("root_certificates"):
+            root_cert = ssl.get_server_certificate(self.target).encode()
+        else:
+            root_cert = self._certificates["root_certificates"]
 
+        chain = self._certificates.get("certificat_chain") or None
+        private_key = self._certificates.get("private_key") or None
+
+        creds = grpc.ssl_channel_credentials(
+                root_certificates=root_cert,
+                private_key=private_key,
+                certificate_chain=chain)
+
+        return grpc.secure_channel(self.hostaddr, creds) #, options=self._grpc_options)
+    
     def _build_update(self, update):
         if isinstance(update, (Update_, Path_)):
             update = update
@@ -127,9 +136,6 @@ class Session(object):
         
         :rtype: gnmi.messages.CapabilitiesResponse_
         """
-
-        # if options.get("extension"):
-        #     raise ValueError("'extension' is not implemented yet.")
 
         _cr = pb.CapabilityRequest()  # type: ignore
 

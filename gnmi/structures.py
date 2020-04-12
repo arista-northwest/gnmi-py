@@ -2,19 +2,20 @@
 # Copyright (c) 2020 Arista Networks, Inc.  All rights reserved.
 # Arista Networks, Inc. Confidential and Proprietary.
 
+from ssl import OP_ALL
 from typing import List, Optional, Tuple, Any
 from typing_extensions import TypedDict
 from gnmi.messages import Path_
 
-class CertificateStore(TypedDict):
-    chain: str
-    private_key: str
-    root: Optional[str]
+class CertificateStore(TypedDict, total=False):
+    certificat_chain: bytes
+    private_key: bytes
+    root_certificates: bytes
 
 
 Auth = Tuple[str, Optional[str]]
 
-Target = Tuple[str, Optional[int]]
+Target = Tuple[str, int]
 
 Metadata = List[Tuple[str, Any]]
 
@@ -41,3 +42,6 @@ class GetOptions(Options, total=False):
     type: str
     use_models: list
 
+class GrpcOptions(TypedDict, total=False):
+    server_host_override: str
+    

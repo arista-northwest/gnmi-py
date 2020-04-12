@@ -1,14 +1,13 @@
 import os
 import pytest
+from tests.conftest import GNMI_TARGET, GNMI_SECURE
 from gnmi.session import Session
 from gnmi.messages import Path_, Update_
 from gnmi.exceptions import GrpcError, GrpcDeadlineExceeded
 from gnmi import util
 from os import replace
 
-GNMI_TARGET = os.environ.get("GNMI_TARGET", "veos3:6030")
 GNMI_PATHS = os.environ.get("GNMI_PATHS", "/system/config;/system/memory/state")
-
 
 @pytest.fixture()
 def paths():
@@ -21,12 +20,18 @@ def target():
     return (host, int(port))
 
 @pytest.fixture()
-def session(target):
+def session(target, certificates):
     metadata = [
         ("username", "admin"),
         ("password", "")
     ]
-    return Session(target, metadata=metadata)
+    if GNMI_SECURE:
+        secure = True
+    else:
+        secure = False
+    
+    #print(certificates)
+    return Session(target, secure=secure, certificates=certificates, metadata=metadata)
 
 def test_cap(session):
     resp = session.capabilities()
@@ -76,9 +81,8 @@ def test_set(session):
     rsps = session.set(replacements=replacements)
     assert rsps.collect()[0].op == "REPLACE"
 
-    resp = session.get(["/system/config/hostname"])
+    _ = session.get(["/system/config/hostname"])
 
-    
     assert _get_hostname() == "minemeow"
 
     updates = [
