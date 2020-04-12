@@ -8,12 +8,16 @@ from gnmi.exceptions import GrpcDeadlineExceeded
 from typing import Any, List, Tuple, Optional
 
 from gnmi.session import Session
-from gnmi.structures import Auth, CertificateStore, GetOptions, Metadata, Options, SubscribeOptions, Target
+from gnmi.structures import Auth, CertificateStore, GetOptions, Metadata
+from gnmi.structures import Options, SubscribeOptions, Target
 
 
-__all__ = ["get", "subscribe", "capabilites", "delete", "replace", "update"]
+__all__ = ["capabilites", "delete", "get", "replace", "subscribe", "update"]
 
-def _new_session(hostaddr: str, auth: Auth = None, certificates: CertificateStore = None, override: str = None):
+def _new_session(hostaddr: str,
+        auth: Auth = None,
+        certificates: CertificateStore = None,
+        override: str = None):
     
     host, port = hostaddr.split(":")
     target: Target = (host, int(port))
@@ -26,7 +30,8 @@ def _new_session(hostaddr: str, auth: Auth = None, certificates: CertificateStor
             ("password", password)
         ]
     
-    return Session(target, metadata=metadata, certificates=certificates, override=override)
+    return Session(target, metadata=metadata, certificates=certificates,
+                override=override)
 
 def capabilites(hostaddr: str, 
         auth: Auth = None,
@@ -62,7 +67,8 @@ def get(hostaddr: str,
 
     Usage::
 
-        >>> get("veos1:6030", ["/system/config"], auth=("admin", "p4ssw0rd"))
+        >>> get("veos1:6030", ["/system/config"],
+        ...     auth=("admin", "p4ssw0rd"))
 
     :param target: gNMI target
     :type target: str
@@ -98,7 +104,8 @@ def subscribe(hostaddr: str,
 
     Usage::
 
-        >>> subscribe("veos1:6030", ["/system/processes/process"], auth=("admin", "p4ssw0rd"))
+        >>> subscribe("veos1:6030", ["/system/processes/process"],
+        ...     auth=("admin", "p4ssw0rd"))s
 
     :param target: gNMI target
     :type target: str
@@ -134,7 +141,8 @@ def _set(hostaddr: str,
         options: Options = {}):
     sess = _new_session(hostaddr, auth, certificates, override)
 
-    return sess.set(deletes=deletes, replacements=replacements, updates=updates, options=options)
+    return sess.set(deletes=deletes, replacements=replacements,
+                updates=updates, options=options)
 
 def delete(hostaddr: str,
         deletes: List[str] = [],
@@ -147,7 +155,8 @@ def delete(hostaddr: str,
 
     Usage::
 
-        >>> delete("veos1:6030", ["/some/deletable/path"], auth=("admin", "p4ssw0rd"))
+        >>> delete("veos1:6030", ["/some/deletable/path"],
+        ...     auth=("admin", "p4ssw0rd"))
 
     :param target: gNMI target
     :type target: str
@@ -175,8 +184,9 @@ def replace(hostaddr: str,
     Replace paths on the target
 
     Usage::
-
-        >>> replace("veos1:6030", [("/system/config/hostname", "newhostname")], auth=("admin", "p4ssw0rd"))
+        >>> replacements = [("/system/config/hostname", "newhostname")]
+        >>> replace("veos1:6030", replacements,
+        ...     auth=("admin", "p4ssw0rd"))
 
     :param target: gNMI target
     :type target: str
@@ -204,8 +214,9 @@ def update(hostaddr: str,
     Update paths on the target
 
     Usage::
-
-        >>> replace("veos1:6030", [("/system/config/hostname", "newhostname")], auth=("admin", "p4ssw0rd"))
+        >>> updates = [("/system/config", {"hostname": "newhostname"})]
+        >>> replace("veos1:6030", updates,
+        ...     auth=("admin", "p4ssw0rd"))
 
     :param target: gNMI target
     :type target: str
