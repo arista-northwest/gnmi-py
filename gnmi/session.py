@@ -19,7 +19,8 @@ from typing import Optional, Iterator
 import ssl
 
 from gnmi import util
-from gnmi.messages import CapabilitiesResponse_, GetResponse_, Path_, Status_, Update_
+from gnmi.messages import CapabilitiesResponse_, GetResponse_, Path_, Status_
+from gnmi.messages import Update_
 from gnmi.messages import SubscribeResponse_, SetResponse_
 from gnmi.structures import Metadata, Target, CertificateStore, Options
 from gnmi.structures import GetOptions, GrpcOptions, SubscribeOptions
@@ -47,7 +48,7 @@ class Session(object):
 
        
         self._certificates = certificates
-        self._grpc_options = grpc_options
+        self._grpc_options = list(grpc_options.items())
         self._secure = secure
         self.target = target
         self.metadata = metadata
@@ -81,7 +82,8 @@ class Session(object):
                 private_key=private_key,
                 certificate_chain=chain)
 
-        return grpc.secure_channel(self.hostaddr, creds) #, options=self._grpc_options)
+        return grpc.secure_channel(self.hostaddr, creds,
+            options=self._grpc_options)
     
     def _build_update(self, update):
         if isinstance(update, (Update_, Path_)):
@@ -195,7 +197,8 @@ class Session(object):
 
         return GetResponse_(response)
 
-    def set(self, deletes: list = [], replacements: list = [], updates: list = [], options: Options = {}) -> SetResponse_:
+    def set(self, deletes: list = [], replacements: list = [], updates: list = [],
+            options: Options = {}) -> SetResponse_:
         r"""Set set, update or delete value from specified path
 
         Usage::
@@ -234,7 +237,8 @@ class Session(object):
             status = Status_.from_call(rpcerr)
             raise GrpcError(status)
 
-    def subscribe(self, paths: list, options: SubscribeOptions = {}) -> Iterator[SubscribeResponse_]:
+    def subscribe(self, paths: list,
+            options: SubscribeOptions = {}) -> Iterator[SubscribeResponse_]:
         r"""Subscribe to state updates from the target
 
         Usage::
