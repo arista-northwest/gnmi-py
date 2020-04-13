@@ -1,6 +1,6 @@
 import os
 import pytest
-from tests.conftest import GNMI_TARGET, GNMI_SECURE
+from tests.conftest import GNMI_PASS, GNMI_TARGET, GNMI_SECURE, GNMI_USER
 from gnmi.session import Session
 from gnmi.messages import Path_, Update_
 from gnmi.exceptions import GrpcError, GrpcDeadlineExceeded
@@ -22,8 +22,8 @@ def target():
 @pytest.fixture()
 def session(target, certificates):
     metadata = [
-        ("username", "admin"),
-        ("password", "")
+        ("username", GNMI_USER),
+        ("password", GNMI_PASS)
     ]
     if GNMI_SECURE:
         secure = True

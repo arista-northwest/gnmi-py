@@ -14,6 +14,7 @@ GNMI_PASS = os.environ.get("GNMI_PASS", "")
 GNMI_ROOT_CERT = os.environ.get("GNMI_ROOT_CERT", "/dev/null")
 GNMI_PRIVAE_KEY = os.environ.get("GNMI_PRIVAE_KEY", "/dev/null")
 GNMI_CERT_CHAIN = os.environ.get("GNMI_CERT_CHAIN", "/dev/null")
+GNMI_AUTH = (GNMI_USER, GNMI_PASS)
 
 @pytest.fixture(scope="session")
 def certificates():
@@ -32,4 +33,9 @@ def certificates():
         root_certificates=root_cert,
     )
 
-    
+@pytest.fixture(scope="session")
+def is_secure():
+    if GNMI_SECURE:
+        return True
+    else:
+        return False
