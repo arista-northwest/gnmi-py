@@ -83,9 +83,11 @@ metadata = [
     ("password", "")
 ]
 
+
 paths = ["/config", "/memory/state"]
 target = ("veos", 6030)
 sess = Session(target, metadata=metadata)
+
 
 for notif in sess.get(paths, options={"prefix": "/system"}):
     prefix = notif.prefix
