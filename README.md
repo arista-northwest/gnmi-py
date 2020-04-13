@@ -77,6 +77,7 @@ gnmipy veos1:6030 subscribe /interfaces
 from gnmi.session import Session
 from gnmi.exceptions import GrpcDeadlineExceeded
 
+
 metadata = [
     ("username", "admin"),
     ("password", "")
