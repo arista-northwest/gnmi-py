@@ -4,19 +4,21 @@
 # Arista Networks, Inc. Confidential and Proprietary.
 
 from functools import partial
+from gnmi.constants import GRPC_CODE_MAP
 from gnmi.exceptions import GrpcDeadlineExceeded
 from typing import Any, List, Tuple, Optional
 
 from gnmi.session import Session
 from gnmi.structures import Auth, CertificateStore, GetOptions, Metadata
-from gnmi.structures import Options, SubscribeOptions, Target
+from gnmi.structures import Options, SubscribeOptions, Target, GrpcOptions
 
 
 __all__ = ["capabilites", "delete", "get", "replace", "subscribe", "update"]
 
 def _new_session(hostaddr: str,
         auth: Auth = None,
-        certificates: CertificateStore = None,
+        secure: bool = False,
+        certificates: CertificateStore = {},
         override: str = None):
     
     host, port = hostaddr.split(":")
@@ -30,12 +32,17 @@ def _new_session(hostaddr: str,
             ("password", password)
         ]
     
+    grpc_options: GrpcOptions = {}
+    if override:
+        grpc_options["server_host_override"] = override
+    
     return Session(target, metadata=metadata, certificates=certificates,
-                override=override)
+                secure=secure, grpc_options=grpc_options)
 
 def capabilites(hostaddr: str, 
         auth: Auth = None,
-        certificates: CertificateStore = None,
+        secure: bool = False,
+        certificates: CertificateStore = {},
         override: str = None):
     """
     Get supported models and encodings from target
@@ -53,13 +60,14 @@ def capabilites(hostaddr: str,
     :param override: override hostname
     :type override: str
     """
-    sess = _new_session(hostaddr, auth, certificates, override)
+    sess = _new_session(hostaddr, auth, secure, certificates, override)
     return sess.capabilities()
 
 def get(hostaddr: str,
         paths: list,
         auth: Auth = None,
-        certificates: CertificateStore = None,
+        secure: bool = False,
+        certificates: CertificateStore = {},
         override: str = None,
         options: GetOptions = {}):
     """
@@ -83,7 +91,7 @@ def get(hostaddr: str,
     :param options: Get options
     :type options: gnmi.structures.GetOptions
     """
-    sess = _new_session(hostaddr, auth, certificates, override)
+    sess = _new_session(hostaddr, auth, secure, certificates, override)
     
     responses = sess.get(paths, options=options)
     for notif in responses:
@@ -96,7 +104,8 @@ def get(hostaddr: str,
 def subscribe(hostaddr: str,
         paths: list,
         auth: Auth = None,
-        certificates: CertificateStore = None,
+        secure: bool = False,
+        certificates: CertificateStore = {},
         override: str = None,
         options: SubscribeOptions = {}):
     """
@@ -120,7 +129,7 @@ def subscribe(hostaddr: str,
     :param options: Subscribe options
     :type options: gnmi.structures.SubscribeOptions
     """
-    sess = _new_session(hostaddr, auth, certificates, override)
+    sess = _new_session(hostaddr, auth, secure, certificates, override)
 
     try:
         for resp in sess.subscribe(paths, options=options):
@@ -131,23 +140,25 @@ def subscribe(hostaddr: str,
     except GrpcDeadlineExceeded:
         pass
 
-def _set(hostaddr: str,
-        deletes: List[str] = [],
-        replacements: List[Tuple[str, Any]] = [],
-        updates: List[Tuple[str, Any]] = [],
-        auth: Auth = None,
-        certificates: CertificateStore = None,
-        override: str = None,
-        options: Options = {}):
-    sess = _new_session(hostaddr, auth, certificates, override)
+# def _set(hostaddr: str,
+#         deletes: List[str] = [],
+#         replacements: List[Tuple[str, Any]] = [],
+#         updates: List[Tuple[str, Any]] = [],
+#         auth: Auth = None,
+#         secure: bool = False,
+#         certificates: CertificateStore = {},
+#         override: str = None,
+#         options: Options = {}):
+    
 
-    return sess.set(deletes=deletes, replacements=replacements,
-                updates=updates, options=options)
+#     return sess.set(deletes=deletes, replacements=replacements,
+#                 updates=updates, options=options)
 
 def delete(hostaddr: str,
         deletes: List[str] = [],
         auth: Auth = None,
-        certificates: CertificateStore = None,
+        secure: bool = False,
+        certificates: CertificateStore = {},
         override: str = None,
         options: Options = {}):
     """
@@ -171,13 +182,14 @@ def delete(hostaddr: str,
     :param options: Subscribe options
     :type options: gnmi.structures.SubscribeOptions
     """
-    return _set(hostaddr, deletes=deletes, auth=auth,
-        certificates=certificates, override=override, options=options)
+    sess = _new_session(hostaddr, auth, secure, certificates, override)
+    return sess.set(deletes=deletes, options=options)
 
 def replace(hostaddr: str,
         replacements: List[Tuple[str, Any]] = [],
         auth: Auth = None,
-        certificates: CertificateStore = None,
+        secure: bool = False,
+        certificates: CertificateStore = {},
         override: str = None,
         options: Options = {}):
     """
@@ -201,13 +213,14 @@ def replace(hostaddr: str,
     :param options: Subscribe options
     :type options: gnmi.structures.SubscribeOptions
     """
-    return _set(hostaddr, replacements=replacements, auth=auth,
-        certificates=certificates, override=override, options=options)
+    sess = _new_session(hostaddr, auth, secure, certificates, override)
+    return sess.set(replacements=replacements, options=options)
 
 def update(hostaddr: str,
         updates: List[Tuple[str, Any]] = [],
         auth: Auth = None,
-        certificates: CertificateStore = None,
+        secure: bool = False,
+        certificates: CertificateStore = {},
         override: str = None,
         options: Options = {}):
     """
@@ -231,5 +244,5 @@ def update(hostaddr: str,
     :param options: Subscribe options
     :type options: gnmi.structures.SubscribeOptions
     """
-    return _set(hostaddr, updates=updates, auth=auth,
-        certificates=certificates, override=override, options=options)
+    sess = _new_session(hostaddr, auth, secure, certificates, override)
+    return sess.set(updates=updates, options=options)
