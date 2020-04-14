@@ -18,9 +18,9 @@ with open(os.path.join('README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
-    name='gnmi-py',
+    name='pygnmi',
     version=version,
-    description="gNMI Client",
+    description="Python gNMI Client",
     long_description=long_description,
     long_description_content_type='text/markdown',
     py_modules=['gnmi'],
@@ -45,11 +45,11 @@ setup(
     ],
     packages = find_packages(),
     #package_data={'': ['settings.yml']},
-    url = "https://github.com/arista-northwest/gnmi-py",
+    url = "https://gitlab.aristanetworks.com/arista-northwest/pygnmi",
     license = "MIT Licesnse",
     entry_points = {
         'console_scripts': [
-            'gnmipy = gnmi.entry:main'
+            'pygnmi = gnmi.entry:main'
         ]
     }
 )
