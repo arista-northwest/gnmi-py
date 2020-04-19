@@ -1,10 +1,11 @@
 .PHONY: docs
 
-test:
-	pytest --junitxml=report.xml tests/
+init:
+	pip3 install pipenv --upgrade
+	pipenv install --dev
 
-flake8:
-	flake8 --ignore=E501,F401,E128,E402,E731,F821 gnmi-py
+test:
+	pipenv run pytest --junitxml=report.xml tests/
 
 publish:
 	pip3 install 'twine>=1.5.0'
