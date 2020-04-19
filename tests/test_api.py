@@ -56,20 +56,18 @@ def test_set(is_secure, certificates, request):
         gen = get(GNMI_TARGET, ["/system/config/hostname"], secure=is_secure,
             certificates=certificates, auth=GNMI_AUTH)
         for resp in gen:
-            path, value = resp
-            hostname = value
-        
-        return hostname
+            _, value = resp        
+            return value
     
     hostname = _get_hostname()
     
-    def _rollback(hostname):
+    def _rollback():
         hostname_ = _get_hostname()
         if hostname_ != hostname:
             update(GNMI_TARGET, updates=[("/system/config/hostname", hostname)],
                 secure=is_secure, certificates=certificates, auth=GNMI_AUTH)
     
-    request.addfinalizer(partial(_rollback, path, hostname))
+    request.addfinalizer(_rollback)
         
     updates = [
         ("/system/config/hostname", "minemeow")
@@ -84,5 +82,6 @@ def test_set(is_secure, certificates, request):
     ]
     gen = replace(GNMI_TARGET, replacements=replacements,
         secure=is_secure, certificates=certificates, auth=GNMI_AUTH)
+
     for r in gen:
         pass
