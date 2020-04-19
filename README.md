@@ -66,7 +66,7 @@ optional arguments:
 
 #### Command-line
 
-```basha
+```bash
 gnmipy veos1:6030 subscribe /interfaces
 ```
 
