@@ -8,7 +8,7 @@ sys.path.insert(0, os.path.abspath("."))
 from gnmi.structures import CertificateStore
 
 GNMI_SECURE = os.environ.get("GNMI_SECURE", "")
-GNMI_TARGET = os.environ.get("GNMI_TARGET", "veos3:6030")
+GNMI_TARGET = os.environ.get("GNMI_TARGET", None)
 GNMI_USER = os.environ.get("GNMI_USER", "admin")
 GNMI_PASS = os.environ.get("GNMI_PASS", "")
 GNMI_ROOT_CERT = os.environ.get("GNMI_ROOT_CERT", "/dev/null")

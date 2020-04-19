@@ -8,6 +8,7 @@ from typing import Any
 import sys
 
 def __h_metadata(data):
+    # normailize metadata to a list of tuples
     ndata = []
 
     for key, val in data.items():
@@ -63,3 +64,7 @@ class Config(ConfigElem):
         with open(file, "r") as fh:
             data = yaml.load(fh.read(), yaml.FullLoader)
         return cls(data)
+    
+    @classmethod
+    def loads(cls, text):
+        return cls(yaml.safe_load(text))

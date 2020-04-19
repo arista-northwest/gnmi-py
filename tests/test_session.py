@@ -7,6 +7,8 @@ from gnmi.exceptions import GrpcError, GrpcDeadlineExceeded
 from gnmi import util
 from os import replace
 
+pytestmark = pytest.mark.skipif(not GNMI_TARGET, reason="gNMI target not set")
+
 GNMI_PATHS = os.environ.get("GNMI_PATHS", "/system/config;/system/memory/state")
 
 @pytest.fixture()

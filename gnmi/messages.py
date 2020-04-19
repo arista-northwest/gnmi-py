@@ -24,51 +24,19 @@ from gnmi.proto import gnmi_pb2 as pb  # type: ignore
 from gnmi import util
 
 
-def decode_bytes(bites, encoding='utf-8'):
-    # python 3.6+ does this automatically
-    if sys.version_info < (3, 6, 0):
-        return bites.decode(encoding)
-    return bites
-
-
 def escape_string(string, escape):
     result = ""
     for character in string:
-        if character in (escape, "\\"):
+        if character in tuple(escape) + ("\\",):
             result += "\\"
         result += character
     return result
 
 
-def extract_value(update):
-
-    val = None
-
-    if not update:
-        return val
-
-    try:
-        val = extract_value_v4(update.val)
-    except ValueError:
-        val = extract_value_v3(update.value)
-
-    return val
-
-
-def extract_value_v3(value):
-    val = None
-    if value.type in (pb.JSON_IETF, pb.JSON): # type: ignore
-        val = json.loads(decode_bytes(value.value))
-    elif value.type in (pb.BYTES, pb.PROTO): # type: ignore
-        val = value.value
-    elif value.type == pb.ASCII: # type: ignore
-        val = str(value.value)
-    else:
-        raise ValueError("Unhandled type of value %s" % str(value))
-    return val
-
-
-def extract_value_v4(value):
+def extract_value(value):
+    if not value:
+        return value
+    
     val = None
     if value.HasField("any_val"):
         val = value.any_val
@@ -85,13 +53,13 @@ def extract_value_v4(value):
     elif value.HasField("int_val"):
         val = value.int_val
     elif value.HasField("json_ietf_val"):
-        val = json.loads(decode_bytes(value.json_ietf_val))
+        val = json.loads(value.json_ietf_val)
     elif value.HasField("json_val"):
-        val = json.loads(decode_bytes(value.json_val))
+        val = json.loads(value.json_val)
     elif value.HasField("leaflist_val"):
         lst = []
         for elem in value.leaflist_val.element:
-            lst.append(extract_value_v4(elem))
+            lst.append(extract_value(elem))
         val = lst
     elif value.HasField("proto_bytes"):
         val = value.proto_bytes
@@ -104,8 +72,8 @@ def extract_value_v4(value):
 
     return val
 
-def _cast_gnmi_type(value, gnmi_type):
-    pass
+# def _cast_gnmi_type(value, gnmi_type):
+#     pass
     
 class BaseMessage(metaclass=ABCMeta):
 
@@ -172,6 +140,7 @@ class Update_(BaseMessage):
     _TYPE_HANDLER_MAP = {
         'bool_val': lambda value: True if value else False,
         'json_ietf_val': lambda value: json.dumps(value).encode(),
+        'json_val': lambda value: json.dumps(value).encode(),
         'int_val': int,
         'float_val': float,
         'string_val': str
@@ -183,7 +152,7 @@ class Update_(BaseMessage):
 
     @property
     def value(self):
-        return extract_value(self.raw)
+        return extract_value(self.raw.val)
     val = value
     
     @property
@@ -201,7 +170,7 @@ class Update_(BaseMessage):
         func = lambda v: v
         
         if forced_type:
-            func = cls._TYPE_HANDLER_MAP[forced_type]
+            func = cls._TYPE_HANDLER_MAP.get(forced_type, lambda v: v)
         else:
             type_ = cls._TYPED_VALUE_MAP.get(type(value))
             if not type_:

@@ -10,6 +10,7 @@ from gnmi import capabilites, get, delete, replace, update, subscribe
 from tests.conftest import GNMI_AUTH, GNMI_TARGET, GNMI_SECURE, certificates, is_secure
 from tests.conftest import GNMI_CERT_CHAIN, GNMI_PRIVAE_KEY, GNMI_ROOT_CERT 
 
+pytestmark = pytest.mark.skipif(not GNMI_TARGET, reason="gNMI target not set")
 
 
 def test_discover(is_secure, certificates):
@@ -28,13 +29,13 @@ def test_get(is_secure, certificates):
         assert path == "/system/config/hostname"
         assert isinstance(value, str)
 
-seen = {}
 def test_subscribe(is_secure, certificates):
     gen = subscribe(GNMI_TARGET,
         paths=["/system/processes/process", "/interfaces/interface"],
         secure=is_secure, certificates=certificates, auth=GNMI_AUTH,
         options={"timeout": 2})
     
+    seen = {}
     for resp in gen:
         path, _ = resp
         if path.startswith("/system/processes/process"): 
@@ -45,6 +46,7 @@ def test_subscribe(is_secure, certificates):
 
     assert "/system/processes/process" in seen.keys()
     assert "/interfaces/interface" in seen.keys()
+
 
 def test_set(is_secure, certificates, request):
     
