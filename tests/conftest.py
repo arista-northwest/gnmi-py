@@ -1,25 +1,24 @@
+from gnmi.structures import CertificateStore
 import os
 import sys
-
+from typing import Tuple
 import pytest
 
 sys.path.insert(0, os.path.abspath("."))
 
-from gnmi.structures import CertificateStore
 
-GNMI_SECURE = os.environ.get("GNMI_SECURE", "")
+GNMI_SECURE: bool = True if os.environ.get("GNMI_SECURE") else False
 GNMI_TARGET: str = os.environ.get("GNMI_TARGET", "")
-GNMI_USER = os.environ.get("GNMI_USER", "admin")
-GNMI_PASS = os.environ.get("GNMI_PASS", "")
-GNMI_ROOT_CERT = os.environ.get("GNMI_ROOT_CERT", "/dev/null")
-GNMI_PRIVAE_KEY = os.environ.get("GNMI_PRIVAE_KEY", "/dev/null")
-GNMI_CERT_CHAIN = os.environ.get("GNMI_CERT_CHAIN", "/dev/null")
-GNMI_AUTH = (GNMI_USER, GNMI_PASS)
+GNMI_USER: str = os.environ.get("GNMI_USER", "admin")
+GNMI_PASS: str = os.environ.get("GNMI_PASS", "")
+GNMI_ROOT_CERT: str = os.environ.get("GNMI_ROOT_CERT", "/dev/null")
+GNMI_PRIVAE_KEY: str = os.environ.get("GNMI_PRIVAE_KEY", "/dev/null")
+GNMI_CERT_CHAIN: str = os.environ.get("GNMI_CERT_CHAIN", "/dev/null")
+GNMI_AUTH: Tuple[str, str] = (GNMI_USER, GNMI_PASS)
+
 
 @pytest.fixture(scope="session")
 def certificates():
-    # hostname, _ = GNMI_TARGET.split(":")
-    # realname = hostname.split(".")[0] + ".lab.lan"
     with open(GNMI_ROOT_CERT, "r") as fh:
         root_cert = fh.read().encode()
     with open(GNMI_CERT_CHAIN) as fh:
@@ -33,9 +32,7 @@ def certificates():
         root_certificates=root_cert,
     )
 
+
 @pytest.fixture(scope="session")
 def is_secure():
-    if GNMI_SECURE:
-        return True
-    else:
-        return False
+    return GNMI_SECURE
