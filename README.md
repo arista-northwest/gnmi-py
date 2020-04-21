@@ -13,10 +13,10 @@ pip3 install gnmi-py
 #### Development
 
 ```bash
-git clone https://github.com/arista-northwest/gnmi-py.git
-cd gnmi-py
-pip3 install -r requirements.txt
-python3 setup.py develop
+git clone https://gitlab.aristanetworks.com/arista-northwest/gnmi-py.git
+# installs pipenv and requirements
+make init
+pipenv shell
 ```
 
 ### Python 2
