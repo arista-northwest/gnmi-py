@@ -6,16 +6,17 @@ metadata:
 subscribe:
     options:
         # prefix: /system
-        subscription_mode: stream
-        allow_aggregation: ~
+        aggregate: ~
         encoding: json
-        use_aliases: ~
-        qos: 0
+        heartbeat: ~
         mode: on-change
-        suppress_redundant: ~
-        sample_interval: ~
-        heartbeat_interval: ~
+        qos: 0
+        use_aliases: ~
+        interval: ~
+        submode: stream
+        suppress: ~
+        timeout: ~
+    
     paths:
         - eos_native:/Kernel/proc/stat/
         - /system/processes/process[pid=*]/state
-    timeout: ~
