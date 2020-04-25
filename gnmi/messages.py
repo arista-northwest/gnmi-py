@@ -23,55 +23,6 @@ import grpc
 from gnmi.proto import gnmi_pb2 as pb  # type: ignore
 from gnmi import util
 
-
-def escape_string(string, escape):
-    result = ""
-    for character in string:
-        if character in tuple(escape) + ("\\",):
-            result += "\\"
-        result += character
-    return result
-
-
-def extract_value(value):
-    if not value:
-        return value
-    
-    val = None
-    if value.HasField("any_val"):
-        val = value.any_val
-    elif value.HasField("ascii_val"):
-        val = value.ascii_val
-    elif value.HasField("bool_val"):
-        val = value.bool_val
-    elif value.HasField("bytes_val"):
-        val = value.bytes_val
-    elif value.HasField("decimal_val"):
-        val = value.decimal_val
-    elif value.HasField("float_val"):
-        val = value.float_val
-    elif value.HasField("int_val"):
-        val = value.int_val
-    elif value.HasField("json_ietf_val"):
-        val = json.loads(value.json_ietf_val)
-    elif value.HasField("json_val"):
-        val = json.loads(value.json_val)
-    elif value.HasField("leaflist_val"):
-        lst = []
-        for elem in value.leaflist_val.element:
-            lst.append(extract_value(elem))
-        val = lst
-    elif value.HasField("proto_bytes"):
-        val = value.proto_bytes
-    elif value.HasField("string_val"):
-        val = value.string_val
-    elif value.HasField("uint_val"):
-        val = value.uint_val
-    else:
-        raise ValueError("Unhandled type of value %s" % str(value))
-
-    return val
-
 # def _cast_gnmi_type(value, gnmi_type):
 #     pass
     
@@ -152,7 +103,7 @@ class Update_(BaseMessage):
 
     @property
     def value(self):
-        return extract_value(self.raw.val)
+        return util.extract_value(self.raw.val)
     val = value
     
     @property
@@ -286,14 +237,6 @@ class Path_(BaseMessage):
     """
 
     RE_ORIGIN = re.compile(r"(?:(?P<origin>[\w\-]+)?:)?(?P<path>\S+)$")
-    RE_COMPONENT = re.compile(r'''
-^
-(?P<pname>[^[]+)
-(\[(?P<key>[a-zA-Z0-9\-\/\.]+)
-=
-(?P<value>.*)
-\])?$
-''', re.VERBOSE)
     
     def __str__(self):
         return self.to_string()
@@ -359,26 +302,9 @@ class Path_(BaseMessage):
         origin = match.group("origin")
         path = match.group("path")
         
-        if path:
-            names = [re.sub(r"\\", "", name) for name in re.split(r"(?<!\\)/", path) if name]
-        
-        for name in names:
-            match = cls.RE_COMPONENT.search(name)
-            if not match:
-                raise ValueError("path component parse error: %s" % name)
+        for elem in util.parse_path(path):
+            elems.append(pb.PathElem(name=elem["name"], key=elem["keys"])) # type: ignore
 
-            if match.group("key") is not None:
-                _key = {}
-                for keyval in re.findall(r"\[([^]]*)\]", name):
-                    val = keyval.split("=")[-1]
-                    _key[keyval.split("=")[0]] = val
-
-                pname = match.group("pname")
-                elem = pb.PathElem(name=pname, key=_key) # type: ignore
-                elems.append(elem)
-            else:
-                elems.append(pb.PathElem(name=name, key={})) # type: ignore
-        
         return cls(pb.Path(origin=origin, elem=elems)) # type: ignore
 
 class Status_(collections.namedtuple('Status_', 

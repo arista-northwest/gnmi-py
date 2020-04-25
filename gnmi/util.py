@@ -3,14 +3,49 @@
 # Arista Networks, Inc. Confidential and Proprietary.
 
 import os
-import sys
 import re
-import json
-from typing import Any, List
+import pathlib
+
+from configparser import ConfigParser
 import google.protobuf as _
 import gnmi.proto.gnmi_pb2 as pb  # type: ignore
 
-# from gnmi.messages import Path_
+from gnmi.config import Config
+from gnmi.constants import GNMIRC_FILES
+
+
+RE_PATH_COMPONENT = re.compile(r'''
+^
+(?P<name>[^[]+)
+(?P<keyval>\[.*\])?$
+''', re.VERBOSE)
+
+
+def enable_debuging():
+    os.environ['GRPC_TRACE'] = 'all'
+    os.environ['GRPC_VERBOSITY'] = 'DEBUG'
+
+
+def get_gnmi_constant(name):
+    return getattr(pb, name.replace("-", "_").upper())
+
+
+# def get_gnmirc_opt(section, name):
+#     pass
+
+
+def load_rc(search_paths = []):
+    search_paths = [pathlib.Path(p) for p in search_paths]
+    search_paths += [pathlib.Path("~").expanduser()]
+    rc = Config({})
+    
+    for p in search_paths:
+        for filename in GNMIRC_FILES:
+            check = pathlib.Path(p / filename)
+            if check.exists():
+                rc = Config.load(check)
+    return rc
+
 
 def parse_duration(duration):
 
@@ -36,9 +71,69 @@ def parse_duration(duration):
     return val * multipliers[unit]
 
 
-def enable_debuging():
-    os.environ['GRPC_TRACE'] = 'all'
-    os.environ['GRPC_VERBOSITY'] = 'DEBUG'
+def parse_path(path):
+    parsed = []
+    elems = [re.sub(r"\\", "", name) for name in re.split(r"(?<!\\)/", path) if name]
 
-def get_gnmi_constant(name):
-    return getattr(pb, name.replace("-", "_").upper())
+    for elem in elems:
+        keys = {}
+        match = RE_PATH_COMPONENT.search(elem)
+        name = match.group("name")
+        keyvals = match.group("keyval")
+        if keyvals:
+            for keyval in re.findall(r"\[([^]]*)\]", keyvals):
+                key, val = keyval.split("=")
+                keys[key] = val
+
+        parsed.append(dict(name=name, keys=keys))
+    
+    return parsed
+
+
+def escape_string(string, escape):
+    result = ""
+    for character in string:
+        if character in tuple(escape) + ("\\",):
+            result += "\\"
+        result += character
+    return result
+
+
+def extract_value(value):
+    if not value:
+        return value
+    
+    val = None
+    if value.HasField("any_val"):
+        val = value.any_val
+    elif value.HasField("ascii_val"):
+        val = value.ascii_val
+    elif value.HasField("bool_val"):
+        val = value.bool_val
+    elif value.HasField("bytes_val"):
+        val = value.bytes_val
+    elif value.HasField("decimal_val"):
+        val = value.decimal_val
+    elif value.HasField("float_val"):
+        val = value.float_val
+    elif value.HasField("int_val"):
+        val = value.int_val
+    elif value.HasField("json_ietf_val"):
+        val = json.loads(value.json_ietf_val)
+    elif value.HasField("json_val"):
+        val = json.loads(value.json_val)
+    elif value.HasField("leaflist_val"):
+        lst = []
+        for elem in value.leaflist_val.element:
+            lst.append(extract_value(elem))
+        val = lst
+    elif value.HasField("proto_bytes"):
+        val = value.proto_bytes
+    elif value.HasField("string_val"):
+        val = value.string_val
+    elif value.HasField("uint_val"):
+        val = value.uint_val
+    else:
+        raise ValueError("Unhandled type of value %s" % str(value))
+
+    return val
