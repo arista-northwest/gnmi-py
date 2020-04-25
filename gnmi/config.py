@@ -7,6 +7,8 @@ from collections.abc import Mapping
 from typing import Any
 import sys
 
+# from gnmi import util
+
 def __h_metadata(data):
     # normailize metadata to a list of tuples
     ndata = []
@@ -32,6 +34,39 @@ class ConfigElem(Mapping):
     
     def __getattr__(self, name: str) -> Any:
         return self[name]
+    
+    def dump(self):
+        data = {}
+        for key, elem in self._data.items():
+            if isinstance(elem, ConfigElem):
+                elem = elem.dump()
+            data[key] = elem
+        return data
+
+    def merge(self, other):
+        if isinstance(other, ConfigElem):
+            other = other.dump()
+        this = self.dump()
+        
+        def _merge(a, b):
+            
+            for (key, value) in b.items():
+                if isinstance(value, dict):
+                    # get node or create one
+                    node = a.setdefault(key, {})
+                    _merge(node, value)
+                elif isinstance(value, (tuple, list)):
+                    if key not in a:
+                        a[key] = []
+                    a[key] += value
+                else:
+                    a[key] = value
+
+        _merge(this, other)
+
+        return this
+        
+
     
     @classmethod
     def _loader(cls, name, value):
@@ -59,6 +94,9 @@ class ConfigElem(Mapping):
 
 class Config(ConfigElem):
 
+    # def find(self, path):
+    #     parsed = util.parse_path(path)
+    
     @classmethod
     def load(cls, file):
         with open(file, "r") as fh:
