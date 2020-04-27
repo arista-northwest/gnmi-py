@@ -23,10 +23,10 @@ def target():
 
 @pytest.fixture()
 def session(target, certificates):
-    metadata = [
-        ("username", GNMI_USER),
-        ("password", GNMI_PASS)
-    ]
+    metadata = {
+        "username": GNMI_USER,
+        "password": GNMI_PASS
+    }
     if GNMI_SECURE:
         secure = True
     else:

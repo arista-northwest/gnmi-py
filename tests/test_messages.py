@@ -4,7 +4,7 @@ import time
 import json
 import gnmi.proto.gnmi_pb2 as pb
 from google.protobuf import any_pb2
-from gnmi.messages import escape_string, extract_value
+from gnmi.util import escape_string, extract_value
 from gnmi.messages import Path_, Update_
 
 @pytest.fixture()

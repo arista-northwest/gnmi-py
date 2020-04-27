@@ -3,7 +3,7 @@
 # Arista Networks, Inc. Confidential and Proprietary.
 
 from ssl import OP_ALL
-from typing import List, Optional, Tuple, Any
+from typing import Dict, Optional, Tuple, Any
 from typing_extensions import TypedDict
 from gnmi.messages import Path_
 
@@ -11,7 +11,7 @@ Auth = Tuple[str, Optional[str]]
 
 Target = Tuple[str, int]
 
-Metadata = List[Tuple[str, Any]]
+Metadata = Dict[str, Any]
 
 class CertificateStore(TypedDict, total=False):
     certificat_chain: bytes

@@ -1,22 +1,21 @@
 
-from pprint import pprint
 from gnmi import util
 
-def test_load_rc():
-    rc = util.load_rc(["examples"])
+# def test_load_rc():
+#     rc = util.load_rc()
     
-    assert rc["metadata"]
+#     assert rc["metadata"]
 
-    if "certificates" in rc:
-        for k, v in rc["certificates"].items():
-            assert k in ("certificat_chain", "private_key", "root_certificates")
+#     if "certificates" in rc:
+#         for k, v in rc["certificates"].items():
+#             assert k in ("certificat_chain", "private_key", "root_certificates")
     
-    if "get" in rc:
-        assert rc["get"]["options"]["encoding"]
+#     if "get" in rc:
+#         assert rc["get"]["options"]["encoding"]
 
-    if "subscribe" in rc:
-        assert rc["subscribe"]
-        assert rc["subscribe"]["options"]["timeout"]
+#     if "subscribe" in rc:
+#         assert rc["subscribe"]
+#         assert rc["subscribe"]["options"]["timeout"]
 
 
 def test_parse_path():

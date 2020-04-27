@@ -23,13 +23,13 @@ def _new_session(hostaddr: str,
     host, port = hostaddr.split(":")
     target: Target = (host, int(port))
 
-    metadata: Metadata = []
+    metadata: Metadata = {}
     if auth:
         username, password = auth
-        metadata += [
-            ("username", username),
-            ("password", password)
-        ]
+        metadata = {
+            "username": username,
+            "password": password
+        }
     
     grpc_options: GrpcOptions = {}
     if override:

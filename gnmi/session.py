@@ -41,7 +41,7 @@ class Session(object):
 
     def __init__(self,
                  target: Target,
-                 metadata: Metadata = [],
+                 metadata: Metadata = {},
                  secure: bool = False,
                  certificates: CertificateStore = {},
                  grpc_options: GrpcOptions = {}):
