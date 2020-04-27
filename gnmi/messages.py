@@ -276,9 +276,9 @@ class Path_(BaseMessage):
 
         path = ""
         for elem in self.elements:
-            path += "/" + escape_string(elem.name, "/")
+            path += "/" + util.escape_string(elem.name, "/")
             for key, val in elem.key.items():
-                val = escape_string(val, "]")
+                val = util.escape_string(val, "]")
                 path += "[" + key + "=" + val + "]"
 
         if self.origin:
