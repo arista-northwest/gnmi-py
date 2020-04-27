@@ -287,17 +287,17 @@ class Session(object):
         :rtype: gnmi.messages.SubscribeResponse_
         """
 
-        aggregate = options.get("aggregate", False)
-        encoding = util.get_gnmi_constant(options.get("encoding", "json"))
-        heartbeat = options.get("heartbeat", None)
-        interval = options.get("interval", None)
-        mode = MODE_MAP.index(options.get("mode", "stream"))
+        aggregate = bool(options.get("aggregate"))
+        encoding = util.get_gnmi_constant(options.get("encoding") or "json")
+        heartbeat = options.get("heartbeat")
+        interval = options.get("interval")
+        mode = MODE_MAP.index(options.get("mode") or "stream")
         prefix = self._parse_path(options.get("prefix"))
         qos = pb.QOSMarking(marking=options.get("qos", 0))
         submode = util.get_gnmi_constant(options.get("submode") or "on-change")
-        suppress = options.get("suppress", False)
-        timeout = options.get("timeout", None)
-        use_alias = options.get("use_alias", False)
+        suppress = bool(options.get("suppress"))
+        timeout = options.get("timeout")
+        use_alias = bool(options.get("use_alias"))
 
         subs = []
         for path in paths:
