@@ -158,7 +158,7 @@ def main():
             print("  %s" % model["name"])
             print("    Version:      %s" % model["version"] or "n/a")
             print("    Organization: %s" % model["organization"])
-    elif config.get("Get").paths:
+    elif config.get("Get") and config["Get"].paths:
         options: GetOptions = config.Get.options
         paths = config.Get.paths
         response = sess.get(paths, options)
@@ -166,7 +166,7 @@ def main():
             prefix = notif.prefix
             for update in notif.updates:
                 print("%s = %s" % (prefix + update.path, update.value))
-    elif config.get("Subscribe").paths:
+    elif config.get("Subscribe") and config["Subscribe"].paths:
         sub_opts: SubscribeOptions = config.Subscribe.options
         paths = config.Subscribe.paths
         try:
