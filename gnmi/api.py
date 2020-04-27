@@ -3,10 +3,8 @@
 # Copyright (c) 2020 Arista Networks, Inc.  All rights reserved.
 # Arista Networks, Inc. Confidential and Proprietary.
 
-from functools import partial
-from gnmi.constants import GRPC_CODE_MAP
 from gnmi.exceptions import GrpcDeadlineExceeded
-from typing import Any, List, Tuple, Optional
+from typing import Any, List, Tuple
 
 from gnmi.session import Session
 from gnmi.structures import Auth, CertificateStore, GetOptions, Metadata
@@ -14,6 +12,7 @@ from gnmi.structures import Options, SubscribeOptions, Target, GrpcOptions
 
 
 __all__ = ["capabilites", "delete", "get", "replace", "subscribe", "update"]
+
 
 def _new_session(hostaddr: str,
         auth: Auth = None,
@@ -39,6 +38,7 @@ def _new_session(hostaddr: str,
     return Session(target, metadata=metadata, certificates=certificates,
                 secure=secure, grpc_options=grpc_options)
 
+
 def capabilites(hostaddr: str, 
         auth: Auth = None,
         secure: bool = False,
@@ -62,6 +62,7 @@ def capabilites(hostaddr: str,
     """
     sess = _new_session(hostaddr, auth, secure, certificates, override)
     return sess.capabilities()
+
 
 def get(hostaddr: str,
         paths: list,
@@ -140,19 +141,6 @@ def subscribe(hostaddr: str,
     except GrpcDeadlineExceeded:
         pass
 
-# def _set(hostaddr: str,
-#         deletes: List[str] = [],
-#         replacements: List[Tuple[str, Any]] = [],
-#         updates: List[Tuple[str, Any]] = [],
-#         auth: Auth = None,
-#         secure: bool = False,
-#         certificates: CertificateStore = {},
-#         override: str = None,
-#         options: Options = {}):
-    
-
-#     return sess.set(deletes=deletes, replacements=replacements,
-#                 updates=updates, options=options)
 
 def delete(hostaddr: str,
         deletes: List[str] = [],
@@ -185,6 +173,7 @@ def delete(hostaddr: str,
     sess = _new_session(hostaddr, auth, secure, certificates, override)
     return sess.set(deletes=deletes, options=options)
 
+
 def replace(hostaddr: str,
         replacements: List[Tuple[str, Any]] = [],
         auth: Auth = None,
@@ -215,6 +204,7 @@ def replace(hostaddr: str,
     """
     sess = _new_session(hostaddr, auth, secure, certificates, override)
     return sess.set(replacements=replacements, options=options)
+
 
 def update(hostaddr: str,
         updates: List[Tuple[str, Any]] = [],

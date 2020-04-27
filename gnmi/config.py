@@ -2,20 +2,15 @@
 # Copyright (c) 2020 Arista Networks, Inc.  All rights reserved.
 # Arista Networks, Inc. Confidential and Proprietary.
 
-import yaml
+
+import pathlib
+import sys
+
 from collections.abc import Mapping
 from typing import Any
 import sys
 
-# from gnmi import util
-
-def __h_metadata(data):
-    # normailize metadata to a list of tuples
-    ndata = []
-
-    for key, val in data.items():
-        ndata.append((key, val))
-    return [(k, v) for k,v in data.items()]
+import toml
 
 class ConfigElem(Mapping):
 
@@ -30,7 +25,8 @@ class ConfigElem(Mapping):
         return len(self._data)
 
     def __getitem__(self, name: str) -> Any:
-        return self._data[name]
+        if name in self._data:
+            return self._data[name]
     
     def __getattr__(self, name: str) -> Any:
         return self[name]
@@ -64,20 +60,12 @@ class ConfigElem(Mapping):
 
         _merge(this, other)
 
-        return this
+        return Config(this)
         
 
     
     @classmethod
     def _loader(cls, name, value):
-
-        # call handler to format data before loading
-        # TODO: is this safe?
-        _mod = sys.modules[__name__]
-        handler = "__h_" + name
-        if hasattr(_mod, handler):
-            f_handler = getattr(_mod, handler)
-            value = f_handler(value)
 
         if isinstance(value, dict):
             return name, cls(value)
@@ -100,9 +88,9 @@ class Config(ConfigElem):
     @classmethod
     def load(cls, file):
         with open(file, "r") as fh:
-            data = yaml.load(fh.read(), yaml.FullLoader)
-        return cls(data)
+            data = cls.loads(fh.read())
+        return data
     
     @classmethod
     def loads(cls, text):
-        return cls(yaml.safe_load(text))
+        return cls(toml.loads(text))

@@ -1,11 +1,10 @@
-from gnmi.structures import CertificateStore
+
 import os
-import sys
 from typing import Tuple
+
 import pytest
 
-sys.path.insert(0, os.path.abspath("."))
-
+import gnmi.structures
 
 GNMI_SECURE: bool = True if os.environ.get("GNMI_SECURE") else False
 GNMI_TARGET: str = os.environ.get("GNMI_TARGET", "")
@@ -26,7 +25,7 @@ def certificates():
     with open(GNMI_PRIVAE_KEY) as fh:
         client_key = fh.read().encode()
 
-    return CertificateStore(
+    return gnmi.structures.CertificateStore(
         certificat_chain=client_cert,
         private_key=client_key,
         root_certificates=root_cert,

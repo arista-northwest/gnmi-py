@@ -4,6 +4,7 @@
 
 import argparse
 import os
+from pprint import pprint
 import signal
 import sys
 
@@ -11,10 +12,9 @@ from grpc import __version__ as grpc_version
 from google.protobuf import __version__ as pb_version
 
 from gnmi.config import Config
-from gnmi.messages import Path_
 from gnmi.session import Session
-from gnmi.structures import Options, GetOptions, SubscribeOptions, Target
-from gnmi.exceptions import GrpcError, GrpcDeadlineExceeded
+from gnmi.structures import GetOptions, SubscribeOptions, Target
+from gnmi.exceptions import GrpcDeadlineExceeded
 from gnmi import util
 import gnmi
 
@@ -38,6 +38,9 @@ def parse_args():
     parser.add_argument("operation", type=str, choices=['capabilities', 'get', 'subscribe'],
         help="gNMI operation [capabilities, get, subscribe]")
     parser.add_argument("paths", nargs="*", default=["/"])
+
+    parser.add_argument("-c", "--config", type=str, default=None,
+        help="Path to gNMI config file")
 
     group = parser.add_argument_group()
     group.add_argument("-d", "--debug", action="store_true",
@@ -69,9 +72,9 @@ def parse_args():
                        help="allow aggregation")
     group.add_argument("--suppress", action="store_true",
                        help="suppress redundant")
-    group.add_argument("--submode", default="on-change", type=str,
+    group.add_argument("--submode", default=None, type=str,
                        help="subscription mode [target-defined, on-change, sample]")
-    group.add_argument("--mode", default="stream", type=str,
+    group.add_argument("--mode", default=None, type=str,
                        help="[stream, once, poll]")
     group.add_argument("--qos", default=0, type=int,
                        help="DSCP value to be set on transmitted telemetry")
@@ -82,7 +85,6 @@ def parse_args():
     return parser.parse_args()
 
 def make_config(args) -> Config:
-
     data = {}
     operation_name = args.operation.capitalize()
     _operation = data[operation_name] = {}
@@ -98,31 +100,50 @@ def make_config(args) -> Config:
         return Config(data)
 
     _operation["paths"] = args.paths
-    _operation["options"] = {
-        "prefix": args.prefix,
-        "encoding": args.encoding,
-    }
+    _operation["options"] = {}
+    if args.prefix:
+        _operation["options"]["prefix"] = args.prefix
+
+    if args.encoding:
+        _operation["options"]["encoding"] = args.encoding
     
     if operation_name == "Get":
-        _operation["options"]["type"] = args.get_type
+        if args.get_type:
+            _operation["options"]["type"] = args.get_type
+    
     elif operation_name == "Subscribe":
-        _operation["options"].update({
-            "heartbeat": util.parse_duration(args.heartbeat),
-            "interval": util.parse_duration(args.interval),
-            "mode": args.mode,
-            "qos": args.qos,
-            "submode": args.submode,
-            "suppress": args.suppress,
-            "timeout": args.timeout,
-            "use_alias": args.use_alias
-        })
+        if args.heartbeat:
+            _operation["options"]["heartbeat"] = util.parse_duration(args.heartbeat)
+        
+        if args.interval:
+            _operation["options"]["interval"] = util.parse_duration(args.interval)
+
+        if args.mode:
+             _operation["options"]["mode"] = args.mode
+        if args.qos:
+            _operation["options"]["qos"] = args.qos
+        
+        if args.submode:
+            _operation["options"]["submode"] = args.submode
+        
+        if args.suppress:
+            _operation["options"]["suppress"] = args.suppress
+        
+        if args.timeout:
+            _operation["options"]["timeout"] = args.timeout
+        
+        if args.use_alias:
+            _operation["options"]["use_alias"] = args.use_alias
 
     return Config(data)
 
 def main():
     args = parse_args()
-    config: Config = make_config(args)
-    
+    config: Config
+    rc: Config = util.load_rc()
+
+    config = make_config(args).merge(rc)
+
     host, port = args.target.split(":")[:2]
     target: Target = (host, int(port))
 
@@ -137,7 +158,7 @@ def main():
             print("  %s" % model["name"])
             print("    Version:      %s" % model["version"] or "n/a")
             print("    Organization: %s" % model["organization"])
-    elif config.get("Get"):
+    elif config.get("Get").paths:
         options: GetOptions = config.Get.options
         paths = config.Get.paths
         response = sess.get(paths, options)
@@ -145,7 +166,7 @@ def main():
             prefix = notif.prefix
             for update in notif.updates:
                 print("%s = %s" % (prefix + update.path, update.value))
-    elif config.get("Subscribe"):
+    elif config.get("Subscribe").paths:
         sub_opts: SubscribeOptions = config.Subscribe.options
         paths = config.Subscribe.paths
         try:
@@ -154,8 +175,7 @@ def main():
                 for update in resp.update.updates:
                     path = prefix + update.path
                     print(str(path), update.value)
-        # except KeyboardInterrupt:
-        #     pass
+
         except GrpcDeadlineExceeded:
             return
 

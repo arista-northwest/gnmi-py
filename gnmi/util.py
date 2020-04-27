@@ -11,6 +11,8 @@ from configparser import ConfigParser
 import google.protobuf as _
 import gnmi.proto.gnmi_pb2 as pb  # type: ignore
 
+import gnmi.environments
+
 from gnmi.config import Config
 from gnmi.constants import GNMIRC_FILES
 
@@ -30,21 +32,13 @@ def enable_debuging():
 def get_gnmi_constant(name):
     return getattr(pb, name.replace("-", "_").upper())
 
-
-# def get_gnmirc_opt(section, name):
-#     pass
-
-
-def load_rc(search_paths = []):
-    search_paths = [pathlib.Path(p) for p in search_paths]
-    search_paths += [pathlib.Path("~").expanduser()]
+def load_rc():
     rc = Config({})
-    
-    for p in search_paths:
-        for filename in GNMIRC_FILES:
-            check = pathlib.Path(p / filename)
-            if check.exists():
-                rc = Config.load(check)
+    path = pathlib.Path(gnmi.environments.RC_PATH)
+    for name in GNMIRC_FILES:
+        fil = path / name
+        if fil.exists():
+            return Config.load(fil)
     return rc
 
 
@@ -90,6 +84,13 @@ def parse_path(path):
     
     return parsed
 
+def prepare_metadata(data):
+    # normailize metadata to a list of tuples
+    ndata = []
+
+    for key, val in data.items():
+        ndata.append((key, val))
+    return [(k, v) for k,v in data.items()]
 
 def escape_string(string, escape):
     result = ""

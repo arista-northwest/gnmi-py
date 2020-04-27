@@ -13,9 +13,9 @@ Sphinx="*"
 [packages]
 grpcio="*"
 protobuf="*"
-grpcio-tooels="*"
+grpcio-tools="*"
 typing-extensions="*"
-PyYAML="*"
+toml="*"
 
 [requires]
 python_version = "3.7"

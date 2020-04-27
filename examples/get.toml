@@ -1,0 +1,11 @@
+[metadata]
+username = "admin"
+password = ""
+
+[Get]
+paths = ["/process[pid=*]/state"]
+
+[Get.options]
+prefix = "/system/processes"
+encoding = "json"
+type = "all"

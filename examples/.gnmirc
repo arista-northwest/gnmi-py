@@ -1,0 +1,18 @@
+[metadata]
+username = "admin"
+password = ""
+
+[Get.options]
+encoding = "json"
+
+[Subscribe.options]
+aggregate = false
+encoding = "json"
+# heartbeat =
+mode = "stream"
+# qos = 0
+use_aliases = false 
+# interval =
+submode = "on-change"
+suppress = true
+#timeout =

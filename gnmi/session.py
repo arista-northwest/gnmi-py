@@ -51,7 +51,7 @@ class Session(object):
         self._grpc_options = list(grpc_options.items())
         self._secure = secure
         self.target = target
-        self.metadata = metadata
+        self.metadata = util.prepare_metadata(metadata)
 
         self._channel = self._new_channel()
 
@@ -318,8 +318,7 @@ class Session(object):
             yield req_iter
 
         try:
-            responses = self._stub.Subscribe(
-                _sr(), timeout, metadata=self.metadata)
+            responses = self._stub.Subscribe(_sr(), timeout, metadata=self.metadata)
             for response in responses:
                 if response.HasField("sync_response"):
                     # TODO: notify the user about this?
