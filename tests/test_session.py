@@ -58,6 +58,13 @@ def test_sub(session, paths):
                 path = prefix + update.path
                 #print(str(path), update.value)
 
+def test_sub_sync_response(session, paths):
+    for resp in session.subscribe(paths):
+        
+        if resp.sync_response:
+            break
+
+
 
 def test_set(session):
     path = "/system/config/hostname"

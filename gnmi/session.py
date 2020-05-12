@@ -321,8 +321,7 @@ class Session(object):
             responses = self._stub.Subscribe(_sr(), timeout, metadata=self.metadata)
             for response in responses:
                 if response.HasField("sync_response"):
-                    # TODO: notify the user about this?
-                    continue
+                    yield SubscribeResponse_(response)
                 elif response.HasField("update"):
                     yield SubscribeResponse_(response)
                 else:

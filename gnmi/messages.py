@@ -211,7 +211,10 @@ class SubscribeResponse_(BaseMessage):
     # @property
     # def sync_response(self):
     #     pass
-    
+    @property
+    def sync_response(self) -> bool:
+        return self.raw.sync_response
+
     @property
     def update(self):
         return Notification_(self.raw.update)
