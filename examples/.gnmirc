@@ -15,4 +15,4 @@ use_aliases = false
 # interval =
 submode = "on-change"
 suppress = true
-#timeout =
+# timeout =
