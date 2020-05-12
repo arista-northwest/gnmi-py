@@ -2,13 +2,8 @@
 # Copyright (c) 2020 Arista Networks, Inc.  All rights reserved.
 # Arista Networks, Inc. Confidential and Proprietary.
 
-
-import pathlib
-import sys
-
 from collections.abc import Mapping
 from typing import Any
-import sys
 
 import toml
 
@@ -81,9 +76,6 @@ class ConfigElem(Mapping):
             return name, value
 
 class Config(ConfigElem):
-
-    # def find(self, path):
-    #     parsed = util.parse_path(path)
     
     @classmethod
     def load(cls, file):
