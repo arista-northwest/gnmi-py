@@ -49,7 +49,8 @@ setup(
     license = "MIT Licesnse",
     entry_points = {
         'console_scripts': [
-            'gnmipy = gnmi.entry:main'
+            'gnmipy = gnmi.entry:main',
+            'gimpy = gnmi.entry:main'
         ]
     }
 )
