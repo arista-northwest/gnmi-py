@@ -114,8 +114,11 @@ def subscribe(hostaddr: str,
 
     Usage::
 
-        >>> subscribe("veos1:6030", ["/system/processes/process"],
+        >>> responses = subscribe("veos1:6030", ["/system/processes/process"],
         ...     auth=("admin", "p4ssw0rd"))s
+        ...
+        >>> for path, val in responses:
+        ...     print(path, val)
 
     :param target: gNMI target
     :type target: str
