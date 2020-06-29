@@ -72,10 +72,14 @@ def parse_args():
                        help="allow aggregation")
     group.add_argument("--suppress", action="store_true",
                        help="suppress redundant")
-    group.add_argument("--submode", default=None, type=str,
-                       help="subscription mode [target-defined, on-change, sample]")
-    group.add_argument("--mode", default=None, type=str,
-                       help="[stream, once, poll]")
+    group.add_argument("--mode", default=None, type=str, choices=['stream', 'once', 'poll'],
+                       help="Specify subscription mode")
+    group.add_argument("--submode", default=None, type=str, choices=['target-defined', 'on-change', 'sample'],
+                       help="subscription sub-mode")
+    group.add_argument("--once", action="store_true", default=False,
+                       help=("End subscription after first sync_response. This is a "
+                             "workaround for implementions that do not support 'once' "
+                             "subscription mode"))
     group.add_argument("--qos", default=0, type=int,
                        help="DSCP value to be set on transmitted telemetry")
 
@@ -171,6 +175,8 @@ def main():
         paths = config.Subscribe.paths
         try:
             for resp in sess.subscribe(paths, options=sub_opts):
+                if args.once and resp.sync_response:
+                    break
                 prefix = resp.update.prefix
                 for update in resp.update.updates:
                     path = prefix + update.path
