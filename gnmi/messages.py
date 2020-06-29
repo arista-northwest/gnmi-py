@@ -103,7 +103,7 @@ class Update_(BaseMessage):
 
     @property
     def value(self):
-        return util.extract_value(self.raw.val)
+        return util.extract_value(self.raw)
     val = value
     
     @property
