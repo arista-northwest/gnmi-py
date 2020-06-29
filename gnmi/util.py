@@ -100,8 +100,34 @@ def escape_string(string, escape):
         result += character
     return result
 
+def extract_value(update):
+    val = None
+    
+    if not update:
+        raise ValueError("Update is empty")
+    
+    if update.val is not None:
+        val = extract_value_v4(update.val)
+    elif update.value is not None:
+        val = extract_value_v3(update.value)
 
-def extract_value(value):
+    return val
+
+
+def extract_value_v3(value):
+    val = None
+    if value.type in (pb.JSON_IETF, pb.JSON):
+        val = json.loads(value.value)
+    elif value.type in (pb.BYTES, pb.PROTO):
+        val = value.value
+    elif value.type == pb.ASCII:
+        val = str(value.value)
+    else:
+        raise ValueError("Unhandled type of value %s" % str(value))
+    
+    return val
+
+def extract_value_v4(value):
     if not value:
         return value
     
@@ -136,6 +162,6 @@ def extract_value(value):
     elif value.HasField("uint_val"):
         val = value.uint_val
     else:
-        raise ValueError("Unhandled type of value %s" % str(value))
+        raise ValueError("Unhandled typed value %s" % value)
 
     return val
