@@ -102,7 +102,7 @@ def escape_string(string, escape):
 
 def extract_value(update):
     val = None
-    
+
     if not update:
         raise ValueError("Update is empty")
     
@@ -153,7 +153,7 @@ def extract_value_v4(value):
     elif value.HasField("leaflist_val"):
         lst = []
         for elem in value.leaflist_val.element:
-            lst.append(extract_value(elem))
+            lst.append(extract_value_v4(elem))
         val = lst
     elif value.HasField("proto_bytes"):
         val = value.proto_bytes
