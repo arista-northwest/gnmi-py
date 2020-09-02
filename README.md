@@ -26,38 +26,59 @@ Not supported :)
 
 ### Usage
 
-```bash
+```
 % gnmipy --help
-usage: gnmi.py [-h] [--version] [-u USERNAME] [-p PASSWORD]
-               [--interval INTERVAL] [--timeout TIMEOUT]
-               [--heartbeat HEARTBEAT] [--aggregate] [--suppress]
-               [--submode SUBMODE] [--mode MODE] [--encoding ENCODING]
-               [--qos QOS] [--use-alias] [--prefix PREFIX]
-               target [paths [paths ...]]
+usage: gnmipy [-h] [--version] [-c CONFIG] [-d] [-u USERNAME] [-p PASSWORD]
+              [--encoding {json,bytes,proto,ascii,json-ietf}]
+              [--prefix PREFIX] [--get-type {config,state,operational}]
+              [--interval INTERVAL] [--timeout TIMEOUT]
+              [--heartbeat HEARTBEAT] [--aggregate] [--suppress]
+              [--mode {stream,once,poll}]
+              [--submode {target-defined,on-change,sample}] [--once]
+              [--qos QOS] [--use-alias]
+              target {capabilities,get,subscribe} [paths [paths ...]]
 
 positional arguments:
-  target                gNMI gRPC server (default: localhost:6030)
+  target                gNMI gRPC server
+  {capabilities,get,subscribe}
+                        gNMI operation [capabilities, get, subscribe]
   paths
 
 optional arguments:
   -h, --help            show this help message and exit
   --version             show program's version number and exit
+  -c CONFIG, --config CONFIG
+                        Path to gNMI config file
+
+  -d, --debug           enable gRPC debugging
 
   -u USERNAME, --username USERNAME
   -p PASSWORD, --password PASSWORD
 
-  --interval INTERVAL   sample interval (default: 10s)
-  --timeout TIMEOUT     subscription duration in seconds (default: none)
+Common options:
+  --encoding {json,bytes,proto,ascii,json-ietf}
+                        set encoding
+  --prefix PREFIX       gRPC path prefix (default: <empty>)
+
+Get options:
+  --get-type {config,state,operational}
+
+Subscribe options:
+  --interval INTERVAL   sample interval in milliseconds (default: 10s)
+  --timeout TIMEOUT     subscription duration in seconds (default: None)
   --heartbeat HEARTBEAT
-                        heartbeat interval (default: none)
+                        heartbeat interval in milliseconds (default: None)
   --aggregate           allow aggregation
   --suppress            suppress redundant
-  --submode SUBMODE     subscription mode [target-defined, on-change, sample]
-  --mode MODE           [stream, once, poll]
-  --encoding ENCODING   [json, bytes, proto, ascii, json-ietf]
-  --qos QOS             [JSON, BYTES, PROTO, ASCII, JSON_IETF]
-  --use-alias           use alias
-  --prefix PREFIX       gRPC path prefix (default: none)
+  --mode {stream,once,poll}
+                        Specify subscription mode
+  --submode {target-defined,on-change,sample}
+                        subscription sub-mode
+  --once                End subscription after first sync_response. This is a
+                        workaround for implementions that do not support
+                        'once' subscription mode
+  --qos QOS             DSCP value to be set on transmitted telemetry
+  --use-alias           use aliases
 ```
 
 
