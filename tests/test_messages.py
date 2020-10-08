@@ -73,19 +73,26 @@ def test_escape_string():
     str_ = r"[key=et/1/1]"
     assert escape_string(str_, "/[]=") == r"\[key\=et\/1\/1\]"
 
-def test_extract_value_invalid():
-    assert extract_value(None) is None
-
-    class _InvalidValue(object):
-
-        def HasField(self, type_):
-            return False
-
+def test_extract_value_invalid(gnmi_path):
     with pytest.raises(ValueError):
-        extract_value(_InvalidValue())
+        extract_value(None)
+
+    # class _InvalidValue(object):
+
+    #     def HasField(self, type_):
+    #         return False
+
+    # upd = pb.Update(
+    #     path=gnmi_path,
+    #     val=_InvalidValue,
+    #     duplicates=0
+    # )
+
+    # with pytest.raises(ValueError):
+    #     extract_value(upd)
 
 def test_extract_value(gnmi_update):
-    assert extract_value(gnmi_update.val)
+    assert extract_value(gnmi_update)
 
 def test_gnmi_path():
     paths = [

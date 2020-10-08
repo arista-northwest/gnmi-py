@@ -15,7 +15,7 @@ import json
 import sys
 
 from abc import ABCMeta, abstractmethod
-from typing import List, Tuple, Any
+from typing import Any, List, Optional, Tuple
 
 import google.protobuf as _
 import grpc
@@ -33,12 +33,8 @@ class BaseMessage(metaclass=ABCMeta):
 
 class IterableMessage(BaseMessage):
 
-    def __iter__(self):
-        return self.iterate()
-
     @abstractmethod
-    def iterate(self):
-        yield from ()
+    def __iter__(self): ...
 
     def collect(self):
         """Collect"""
@@ -117,7 +113,7 @@ class Update_(BaseMessage):
         path = Path_.from_string(path)
         typed_value = pb.TypedValue()
 
-        type_: str = forced_type
+        type_: Optional[str] = forced_type
         func = lambda v: v
         
         if forced_type:
@@ -138,7 +134,7 @@ class Notification_(IterableMessage):
 
     """
     
-    def iterate(self):
+    def __iter__(self):
         return self.updates
 
     @property
@@ -159,7 +155,7 @@ class GetResponse_(IterableMessage):
 
     """
 
-    def iterate(self):
+    def __iter__(self):
         return self.notifications
     
     @property
@@ -191,7 +187,7 @@ class UpdateResult_(BaseMessage):
 
 class SetResponse_(IterableMessage):
 
-    def iterate(self):
+    def __iter__(self):
         return self.responses
     
     @property
@@ -234,7 +230,7 @@ class PathElem_(BaseMessage):
     def name(self):
         return self.raw.name
 
-class Path_(BaseMessage):
+class Path_(IterableMessage):
     r"""Represents a gnmi.Path message
 
     """
@@ -255,6 +251,8 @@ class Path_(BaseMessage):
 
         return Path_(pb.Path(elem=elems)) # type: ignore
 
+    def __iter__(self):
+        return self.elements
 
     @property
     def elements(self):
