@@ -19,7 +19,7 @@ with open(os.path.join('README.md'), encoding='utf-8') as f:
 
 setup(
     name='gnmi-py',
-    version=version,
+    version="version",
     description="Python gNMI Client",
     long_description=long_description,
     long_description_content_type='text/markdown',
