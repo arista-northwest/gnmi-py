@@ -2,10 +2,12 @@
 # Copyright (c) 2020 Arista Networks, Inc.  All rights reserved.
 # Arista Networks, Inc. Confidential and Proprietary.
 
+import functools
 import json
 import os
 import re
 import pathlib
+import warnings
 
 from configparser import ConfigParser
 import google.protobuf as _
@@ -16,6 +18,7 @@ import gnmi.environments
 from gnmi.config import Config
 from gnmi.constants import GNMIRC_FILES
 
+warnings.simplefilter("once", category=(PendingDeprecationWarning, DeprecationWarning))
 
 RE_PATH_COMPONENT = re.compile(r'''
 ^
@@ -23,6 +26,14 @@ RE_PATH_COMPONENT = re.compile(r'''
 (?P<keyval>\[.*\])?$
 ''', re.VERBOSE)
 
+def deprecated(msg, klass=DeprecationWarning):
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            warnings.warn(msg, klass, stacklevel=2)
+            return func(*args, **kwargs)
+        return wrapper
+    return decorator
 
 def enable_debuging():
     os.environ['GRPC_TRACE'] = 'all'
@@ -100,68 +111,67 @@ def escape_string(string, escape):
         result += character
     return result
 
-def extract_value(update):
-    val = None
+# def extract_value(update):
+#     val = None
 
-    if not update:
-        raise ValueError("Update is empty")
+#     if not update:
+#         raise ValueError("Update is empty")
     
-    if update.val is not None:
-        val = extract_value_v4(update.val)
-    elif update.value is not None:
-        val = extract_value_v3(update.value)
+#     try: 
+#         val = extract_value_v4(update.val)
+#     except ValueError:
+#         val = extract_value_v3(update.value)
 
-    return val
+#     return val
 
-
-def extract_value_v3(value):
-    val = None
-    if value.type in (pb.JSON_IETF, pb.JSON):
-        val = json.loads(value.value)
-    elif value.type in (pb.BYTES, pb.PROTO):
-        val = value.value
-    elif value.type == pb.ASCII:
-        val = str(value.value)
-    else:
-        raise ValueError("Unhandled type of value %s" % str(value))
+# def extract_value_v3(value):
+#     val = None
+#     if value.type in (pb.JSON_IETF, pb.JSON) and value.value:
+#         val = json.loads(value.value)
+#     elif value.type in (pb.BYTES, pb.PROTO):
+#         val = value.value
+#     elif value.type == pb.ASCII:
+#         val = str(value.value)
+#     else:
+#         raise ValueError("Unhandled type of value %s" % str(value))
     
-    return val
+#     return val
 
-def extract_value_v4(value):
-    if not value:
-        return value
-    
-    val = None
-    if value.HasField("any_val"):
-        val = value.any_val
-    elif value.HasField("ascii_val"):
-        val = value.ascii_val
-    elif value.HasField("bool_val"):
-        val = value.bool_val
-    elif value.HasField("bytes_val"):
-        val = value.bytes_val
-    elif value.HasField("decimal_val"):
-        val = value.decimal_val
-    elif value.HasField("float_val"):
-        val = value.float_val
-    elif value.HasField("int_val"):
-        val = value.int_val
-    elif value.HasField("json_ietf_val"):
-        val = json.loads(value.json_ietf_val)
-    elif value.HasField("json_val"):
-        val = json.loads(value.json_val)
-    elif value.HasField("leaflist_val"):
-        lst = []
-        for elem in value.leaflist_val.element:
-            lst.append(extract_value_v4(elem))
-        val = lst
-    elif value.HasField("proto_bytes"):
-        val = value.proto_bytes
-    elif value.HasField("string_val"):
-        val = value.string_val
-    elif value.HasField("uint_val"):
-        val = value.uint_val
-    else:
-        raise ValueError("Unhandled typed value %s" % value)
+# def extract_value_v4(value: pb.TypedValue):
+#     if not value:
+#         return value
 
-    return val
+#     val = None
+#     if value.HasField("any_val"):
+#         val = value.any_val
+#     elif value.HasField("ascii_val"):
+#         val = value.ascii_val
+#     elif value.HasField("bool_val"):
+#         val = value.bool_val
+#     elif value.HasField("bytes_val"):
+#         val = value.bytes_val
+#     elif value.HasField("decimal_val"):
+#         val = value.decimal_val
+#     elif value.HasField("float_val"):
+#         val = value.float_val
+#     elif value.HasField("int_val"):
+#         val = value.int_val
+#     elif value.HasField("json_ietf_val"):
+#         val = json.loads(value.json_ietf_val)
+#     elif value.HasField("json_val"):
+#         val = json.loads(value.json_val)
+#     elif value.HasField("leaflist_val"):
+#         lst = []
+#         for elem in value.leaflist_val.element:
+#             lst.append(extract_value_v4(elem))
+#         val = lst
+#     elif value.HasField("proto_bytes"):
+#         val = value.proto_bytes
+#     elif value.HasField("string_val"):
+#         val = value.string_val
+#     elif value.HasField("uint_val"):
+#         val = value.uint_val
+#     else:
+#         raise ValueError("Unhandled typed value %s" % value)
+
+#     return val
