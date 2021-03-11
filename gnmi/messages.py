@@ -13,9 +13,10 @@ import re
 import collections
 import json
 import sys
+import itertools
 
 from abc import ABCMeta, abstractmethod
-from typing import Any, List, Optional, Tuple
+from typing import Any, Dict, Generator, List, Optional, Tuple, Union
 
 import google.protobuf as _
 import grpc
@@ -23,9 +24,6 @@ import grpc
 from gnmi.proto import gnmi_pb2 as pb  # type: ignore
 from gnmi import util
 
-# def _cast_gnmi_type(value, gnmi_type):
-#     pass
-    
 class BaseMessage(metaclass=ABCMeta):
 
     def __init__(self, message):
@@ -34,7 +32,8 @@ class BaseMessage(metaclass=ABCMeta):
 class IterableMessage(BaseMessage):
 
     @abstractmethod
-    def __iter__(self): ...
+    def __iter__(self):
+        return iter([])
 
     def collect(self):
         """Collect"""
@@ -70,6 +69,73 @@ class CapabilitiesResponse_(BaseMessage):
         return self.raw.gNMI_version
     version = gnmi_version
 
+class TypedValue_(BaseMessage):
+
+    @property
+    def value(self) -> Any:
+        return self.to_scalar()
+
+    def to_scalar(self) -> Any:
+        val = None
+        if self.raw.HasField("any_val"):
+            val = self.raw.any_val
+        elif self.raw.HasField("ascii_val"):
+            val = self.raw.ascii_val
+        elif self.raw.HasField("bool_val"):
+            val = self.raw.bool_val
+        elif self.raw.HasField("bytes_val"):
+            val = self.raw.bytes_val
+        elif self.raw.HasField("decimal_val"):
+            val = self.raw.decimal_val
+        elif self.raw.HasField("float_val"):
+            val = self.raw.float_val
+        elif self.raw.HasField("int_val"):
+            val = self.raw.int_val
+        elif self.raw.HasField("json_ietf_val"):
+            val = json.loads(self.raw.json_ietf_val)
+        elif self.raw.HasField("json_val"):
+            val = json.loads(self.raw.json_val)
+        elif self.raw.HasField("leaflist_val"):
+            lst = []
+            for elem in self.raw.leaflist_val.element:
+                lst.append(self.to_scalar(TypedValue_(elem)))
+            val = lst
+        elif self.raw.HasField("proto_bytes"):
+            val = self.raw.proto_bytes
+        elif self.raw.HasField("string_val"):
+            val = self.raw.string_val
+        elif self.raw.HasField("uint_val"):
+            val = self.raw.uint_val
+        else:
+            raise ValueError("Unhandled typed value %s" % self.raw)
+
+        return val
+
+@util.deprecated("Message 'Value' is deprecated and may be removed in the future")
+class Value_(BaseMessage):
+
+    @property
+    def value(self):
+        return self.to_scalar()
+
+    @property
+    def type(self):
+        return self.raw.type
+
+    def __str__(self):
+        return str(self.to_scalar())
+
+    def to_scalar(self) -> Any:
+        val = None
+        if self.type in (pb.JSON_IETF, pb.JSON) and self.raw.value:
+            val = json.loads(self.raw.value)
+        elif self.type in (pb.BYTES, pb.PROTO):
+            val = self.raw.value
+        elif self.type == pb.ASCII:
+            val = str(self.raw.value)
+        else:
+            raise ValueError("Unhandled type of value %s" % str(val))
+        return val
 
 class Update_(BaseMessage):
     r"""Represents a gnmi.Update message
@@ -98,13 +164,24 @@ class Update_(BaseMessage):
         return Path_(self.raw.path)
 
     @property
+    def val(self):
+        return TypedValue_(self.raw.val)
+        #return util.extract_value_v4(self.raw.val)
+    
+    @property
+    @util.deprecated("The 'value' field has been deprecated and may be removed in the future")
     def value(self):
-        return util.extract_value(self.raw)
-    val = value
+        return Value_(self.raw.value)
     
     @property
     def duplicates(self):
         return self.raw.duplicates
+
+    def get_value(self):
+        try:
+            return self.val.to_scalar()
+        except ValueError:
+            return self.value.to_scalar()
 
     @classmethod
     def from_keyval(cls, keyval: Tuple[str, Any], forced_type: str = ""):
@@ -135,7 +212,7 @@ class Notification_(IterableMessage):
     """
     
     def __iter__(self):
-        return self.updates
+        return self.update
 
     @property
     def prefix(self):
@@ -146,9 +223,11 @@ class Notification_(IterableMessage):
         return self.raw.timestamp
 
     @property
-    def updates(self):
-        for update in self.raw.update:
-            yield Update_(update)
+    def update(self):
+        for u in self.raw.update:
+            yield Update_(u)
+
+    updates = update
 
 class GetResponse_(IterableMessage):
     r"""Represents a gnmi.GetResponse message
@@ -156,12 +235,13 @@ class GetResponse_(IterableMessage):
     """
 
     def __iter__(self):
-        return self.notifications
+        return self.notification
     
     @property
-    def notifications(self):
+    def notification(self):
         for notification in self.raw.notification:
             yield Notification_(notification)
+    notifications = notification
 
 class UpdateResult_(BaseMessage):
     _OPERATION = [
@@ -188,16 +268,18 @@ class UpdateResult_(BaseMessage):
 class SetResponse_(IterableMessage):
 
     def __iter__(self):
-        return self.responses
+        return self.response
     
     @property
     def timetamp(self):
         pass
 
     @property
-    def responses(self):
+    def response(self):
         for resp in self.raw.response:
             yield UpdateResult_(resp)
+
+    responses = response
 
 class SubscribeResponse_(BaseMessage):
     r"""Represents a gnmi.SubscribeResponse message
@@ -242,28 +324,32 @@ class Path_(IterableMessage):
     
     def __add__(self, other: 'Path_') -> 'Path_':
         elems = []
+        elements = []
 
-        for elem in self.elements:
-            elems.append(elem.raw)
+        for e in itertools.chain(self.elem, other.elem):
+            elems.append(e.raw)
 
-        for elem in other.elements:
-            elems.append(elem.raw)
+        if not elems:
+            for e in itertools.chain(self.element, other.element):
+                elements.append(e)
 
-        return Path_(pb.Path(elem=elems)) # type: ignore
+        return Path_(pb.Path(elem=elems, element=elements)) # type: ignore
 
     def __iter__(self):
-        return self.elements
+        return self.elem
 
     @property
-    def elements(self):
-        elem = self.raw.elem
-        
-        # use v3 if present
-        if len(self.raw.element) > 0:
-            elem = self.raw.element
-        
+    def elem(self) -> Generator[PathElem_, None, None]:
         for elem in self.raw.elem:
             yield PathElem_(elem)
+    elems = elem
+
+    @property
+    @util.deprecated("The 'element' field has been deprecated and may be removed in the future")
+    def element(self) -> Generator[str, None, None]:
+        for e in self.raw.element:
+            yield e
+    elements = element
 
     @property
     def origin(self):
@@ -276,15 +362,17 @@ class Path_(IterableMessage):
     def to_string(self):
 
         path = ""
-        for elem in self.elements:
+        for elem in self.elem:
             path += "/" + util.escape_string(elem.name, "/")
             for key, val in elem.key.items():
                 val = util.escape_string(val, "]")
                 path += "[" + key + "=" + val + "]"
-
+        
+        if not path:
+            path =  "/" + "/".join(self.element)
+        
         if self.origin:
             path = ":".join([self.origin, path])
-        
         return path
     
     @classmethod
