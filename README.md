@@ -114,7 +114,7 @@ for notif in sess.get(paths, options={"prefix": "/system"}):
     prefix = notif.prefix
     for update in notif.updates:
         path = prefix + update.path
-        print(path, update.value)
+        print(path, update.get_value())
 
 paths = ["/system/processes/process"]
 try:
@@ -122,6 +122,6 @@ try:
         prefix = resp.update.prefix
         for update in resp.update.updates:
             path = prefix + update.path
-            print(str(path), update.value)
+            print(str(path), update.get_value())
 except GrpcDeadlineExceeded:
     print("User defined timeout exceeded.")
