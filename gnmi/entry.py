@@ -169,7 +169,7 @@ def main():
         for notif in response:
             prefix = notif.prefix
             for update in notif.updates:
-                print("%s = %s" % (prefix + update.path, update.value))
+                print("%s = %s" % (prefix + update.path, update.get_value()))
     elif config.get("Subscribe") and config["Subscribe"].paths:
         sub_opts: SubscribeOptions = config.Subscribe.options
         paths = config.Subscribe.paths
@@ -180,7 +180,7 @@ def main():
                 prefix = resp.update.prefix
                 for update in resp.update.updates:
                     path = prefix + update.path
-                    print(str(path), update.value)
+                    print(str(path), update.get_value())
 
         except GrpcDeadlineExceeded:
             return
