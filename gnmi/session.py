@@ -216,6 +216,8 @@ class Session(object):
         :type options: gnmi.structures.Options
         :rtype: gnmi.messages.SetResponse_
         """
+        
+        response: Optional[SetResponse_] = None
 
         prefix = self._parse_path(options.get("prefix"))
         
@@ -232,10 +234,12 @@ class Session(object):
         _sr = pb.SetRequest(**setargs)
 
         try:
-            return SetResponse_(self._stub.Set(_sr, metadata=self.metadata))
+            response = SetResponse_(self._stub.Set(_sr, metadata=self.metadata))
         except grpc.RpcError as rpcerr:
             status = Status_.from_call(rpcerr)
             raise GrpcError(status)
+        
+        return response
 
     def subscribe(self, paths: list,
             options: SubscribeOptions = {}) -> Iterator[SubscribeResponse_]:
