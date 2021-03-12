@@ -39,7 +39,6 @@ def enable_debuging():
     os.environ['GRPC_TRACE'] = 'all'
     os.environ['GRPC_VERBOSITY'] = 'DEBUG'
 
-
 def get_gnmi_constant(name):
     return getattr(pb, name.replace("-", "_").upper())
 
@@ -51,7 +50,6 @@ def load_rc():
         if fil.exists():
             return Config.load(fil)
     return rc
-
 
 def parse_duration(duration):
 
@@ -110,68 +108,3 @@ def escape_string(string, escape):
             result += "\\"
         result += character
     return result
-
-# def extract_value(update):
-#     val = None
-
-#     if not update:
-#         raise ValueError("Update is empty")
-    
-#     try: 
-#         val = extract_value_v4(update.val)
-#     except ValueError:
-#         val = extract_value_v3(update.value)
-
-#     return val
-
-# def extract_value_v3(value):
-#     val = None
-#     if value.type in (pb.JSON_IETF, pb.JSON) and value.value:
-#         val = json.loads(value.value)
-#     elif value.type in (pb.BYTES, pb.PROTO):
-#         val = value.value
-#     elif value.type == pb.ASCII:
-#         val = str(value.value)
-#     else:
-#         raise ValueError("Unhandled type of value %s" % str(value))
-    
-#     return val
-
-# def extract_value_v4(value: pb.TypedValue):
-#     if not value:
-#         return value
-
-#     val = None
-#     if value.HasField("any_val"):
-#         val = value.any_val
-#     elif value.HasField("ascii_val"):
-#         val = value.ascii_val
-#     elif value.HasField("bool_val"):
-#         val = value.bool_val
-#     elif value.HasField("bytes_val"):
-#         val = value.bytes_val
-#     elif value.HasField("decimal_val"):
-#         val = value.decimal_val
-#     elif value.HasField("float_val"):
-#         val = value.float_val
-#     elif value.HasField("int_val"):
-#         val = value.int_val
-#     elif value.HasField("json_ietf_val"):
-#         val = json.loads(value.json_ietf_val)
-#     elif value.HasField("json_val"):
-#         val = json.loads(value.json_val)
-#     elif value.HasField("leaflist_val"):
-#         lst = []
-#         for elem in value.leaflist_val.element:
-#             lst.append(extract_value_v4(elem))
-#         val = lst
-#     elif value.HasField("proto_bytes"):
-#         val = value.proto_bytes
-#     elif value.HasField("string_val"):
-#         val = value.string_val
-#     elif value.HasField("uint_val"):
-#         val = value.uint_val
-#     else:
-#         raise ValueError("Unhandled typed value %s" % value)
-
-#     return val
