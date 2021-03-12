@@ -73,9 +73,12 @@ class TypedValue_(BaseMessage):
 
     @property
     def value(self) -> Any:
-        return self.to_scalar()
+        return self.extract_val()
 
-    def to_scalar(self) -> Any:
+    def __str__(self):
+        return str(self.extract_val())
+
+    def extract_val(self) -> Any:
         val = None
         if self.raw.HasField("any_val"):
             val = self.raw.any_val
@@ -98,7 +101,7 @@ class TypedValue_(BaseMessage):
         elif self.raw.HasField("leaflist_val"):
             lst = []
             for elem in self.raw.leaflist_val.element:
-                lst.append(self.to_scalar(TypedValue_(elem)))
+                lst.append(TypedValue_(elem).extract_val())
             val = lst
         elif self.raw.HasField("proto_bytes"):
             val = self.raw.proto_bytes
@@ -116,18 +119,18 @@ class Value_(BaseMessage):
 
     @property
     def value(self):
-        return self.to_scalar()
+        return self.extract_val()
 
     @property
     def type(self):
         return self.raw.type
 
     def __str__(self):
-        return str(self.to_scalar())
+        return str(self.extract_val())
 
-    def to_scalar(self) -> Any:
+    def extract_val(self) -> Any:
         val = None
-        if self.type in (pb.JSON_IETF, pb.JSON) and self.raw.value:
+        if self.type in (pb.JSON_IETF, pb.JSON):
             val = json.loads(self.raw.value)
         elif self.type in (pb.BYTES, pb.PROTO):
             val = self.raw.value
@@ -166,7 +169,6 @@ class Update_(BaseMessage):
     @property
     def val(self):
         return TypedValue_(self.raw.val)
-        #return util.extract_value_v4(self.raw.val)
     
     @property
     @util.deprecated("The 'value' field has been deprecated and may be removed in the future")
@@ -179,9 +181,9 @@ class Update_(BaseMessage):
 
     def get_value(self):
         try:
-            return self.val.to_scalar()
+            return self.val.extract_val()
         except ValueError:
-            return self.value.to_scalar()
+            return self.value.extract_val()
 
     @classmethod
     def from_keyval(cls, keyval: Tuple[str, Any], forced_type: str = ""):
