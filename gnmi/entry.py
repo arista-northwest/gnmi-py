@@ -43,7 +43,7 @@ def parse_args():
         help="Path to gNMI config file")
 
     group = parser.add_argument_group()
-    group.add_argument("-d", "--debug", action="store_true",
+    group.add_argument("--debug-grpc", action="store_true",
                        help="enable gRPC debugging")
 
     group = parser.add_argument_group()
@@ -150,6 +150,9 @@ def main():
 
     host, port = args.target.split(":")[:2]
     target: Target = (host, int(port))
+
+    if args.debug_grpc:
+        util.enable_debuging()
 
     sess = Session(target, metadata=config.metadata)
 
