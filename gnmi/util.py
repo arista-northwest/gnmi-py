@@ -2,38 +2,22 @@
 # Copyright (c) 2020 Arista Networks, Inc.  All rights reserved.
 # Arista Networks, Inc. Confidential and Proprietary.
 
-import functools
-import json
 import os
 import re
 import pathlib
-import warnings
 
-from configparser import ConfigParser
 import google.protobuf as _
 import gnmi.proto.gnmi_pb2 as pb  # type: ignore
 
-import gnmi.environments
-
+from gnmi.environments import GNMI_RC_PATH
 from gnmi.config import Config
 from gnmi.constants import GNMIRC_FILES
-
-warnings.simplefilter("once", category=(PendingDeprecationWarning, DeprecationWarning))
 
 RE_PATH_COMPONENT = re.compile(r'''
 ^
 (?P<name>[^[]+)
 (?P<keyval>\[.*\])?$
 ''', re.VERBOSE)
-
-def deprecated(msg, klass=DeprecationWarning):
-    def decorator(func):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            warnings.warn(msg, klass, stacklevel=2)
-            return func(*args, **kwargs)
-        return wrapper
-    return decorator
 
 def enable_debuging():
     os.environ['GRPC_TRACE'] = 'all'
@@ -44,7 +28,7 @@ def get_gnmi_constant(name):
 
 def load_rc():
     rc = Config({})
-    path = pathlib.Path(gnmi.environments.RC_PATH)
+    path = pathlib.Path(GNMI_RC_PATH)
     for name in GNMIRC_FILES:
         fil = path / name
         if fil.exists():
