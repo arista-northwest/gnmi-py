@@ -7,4 +7,5 @@ import pathlib
 
 _HOME = pathlib.Path.home()
 
-RC_PATH = os.environ.get("RC_PATH", _HOME)
+GNMI_RC_PATH = os.environ.get("RC_PATH", _HOME)
+GNMI_NO_DEPRECATED = True if os.environ.get("GNMI_NO_DEPRECATED") else False
