@@ -334,7 +334,8 @@ class Session(object):
         except grpc.RpcError as rpcerr:
             status = Status_.from_call(rpcerr)
 
-            if status.code.name == "DEADLINE_EXCEEDED":
+            # server sometimes sends: gnmi.exceptions.GrpcError: StatusCode.UNKNOWN: context deadline exceeded
+            if status.code.name == "DEADLINE_EXCEEDED" or status.details == "context deadline exceeded":
                 raise GrpcDeadlineExceeded(status)
             else:
                 raise GrpcError(status)
