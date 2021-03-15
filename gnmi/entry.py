@@ -37,7 +37,7 @@ def parse_args():
     parser.add_argument("target", help="gNMI gRPC server")
     parser.add_argument("operation", type=str, choices=['capabilities', 'get', 'subscribe'],
         help="gNMI operation [capabilities, get, subscribe]")
-    parser.add_argument("paths", nargs="*", default=["/"])
+    parser.add_argument("paths", nargs="+")
 
     parser.add_argument("-c", "--config", type=str, default=None,
         help="Path to gNMI config file")
