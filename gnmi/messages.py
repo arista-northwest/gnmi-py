@@ -9,20 +9,36 @@ gNMI messags wrappers
 
 """
 
-import re
 import collections
-import json
-import sys
+import functools
 import itertools
+import json
+import re
+import warnings
 
 from abc import ABCMeta, abstractmethod
-from typing import Any, Dict, Generator, List, Optional, Tuple, Union
+from typing import Any, Generator, List, Optional, Tuple
 
 import google.protobuf as _
 import grpc
 
+from gnmi.environments import GNMI_NO_DEPRECATED, GNMI_RC_PATH
+from gnmi.exceptions import GnmiDeprecationError
 from gnmi.proto import gnmi_pb2 as pb  # type: ignore
 from gnmi import util
+
+warnings.simplefilter("once", category=(PendingDeprecationWarning, DeprecationWarning))
+
+def deprecated(msg, klass=DeprecationWarning):
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            if GNMI_NO_DEPRECATED:
+                raise GnmiDeprecationError(msg)
+            warnings.warn(msg, klass, stacklevel=2)
+            return func(*args, **kwargs)
+        return wrapper
+    return decorator
 
 class BaseMessage(metaclass=ABCMeta):
 
@@ -69,7 +85,7 @@ class CapabilitiesResponse_(BaseMessage):
         return self.raw.gNMI_version
     version = gnmi_version
 
-@util.deprecated(("Deprecated in favour of using the "
+@deprecated(("Deprecated in favour of using the "
     "google.golang.org/genproto/googleapis/rpc/status"
     "message in the RPC response."))
 class Error_(BaseMessage):
@@ -131,7 +147,7 @@ class TypedValue_(BaseMessage):
 
         return val
 
-@util.deprecated("Message 'Value' is deprecated and may be removed in the future")
+@deprecated("Message 'Value' is deprecated and may be removed in the future")
 class Value_(BaseMessage):
 
     @property
@@ -188,7 +204,7 @@ class Update_(BaseMessage):
         return TypedValue_(self.raw.val)
     
     @property
-    @util.deprecated("Field 'value' has been deprecated and may be removed in the future")
+    @deprecated("Field 'value' has been deprecated and may be removed in the future")
     def value(self):
         return Value_(self.raw.value)
     
@@ -200,7 +216,10 @@ class Update_(BaseMessage):
         try:
             return self.val.extract_val()
         except ValueError:
-            return self.value.extract_val()
+            if not GNMI_NO_DEPRECATED:
+                return self.value.extract_val()
+            else:
+                raise
 
     @classmethod
     def from_keyval(cls, keyval: Tuple[str, Any], forced_type: str = ""):
@@ -263,7 +282,7 @@ class GetResponse_(IterableMessage):
     notifications = notification
         
     @property
-    @util.deprecated("Field 'error' has been deprecated and may be removed in the future")
+    @deprecated("Field 'error' has been deprecated and may be removed in the future")
     def error(self) -> Error_:
         return Error_(self.raw.error)
 
@@ -290,7 +309,7 @@ class UpdateResult_(BaseMessage):
         return Path_(self.raw.path)
 
     @property
-    @util.deprecated(("Deprecated timestamp for the UpdateResult, this field has been "
+    @deprecated(("Deprecated timestamp for the UpdateResult, this field has been "
         "replaced by the timestamp within the SetResponse message, since "
         "all mutations effected by a set should be applied as a single "
         "transaction."))
@@ -298,7 +317,7 @@ class UpdateResult_(BaseMessage):
         return self.raw.timestamp
 
     @property
-    @util.deprecated("Field 'error' has been deprecated and may be removed in the future")
+    @deprecated("Field 'error' has been deprecated and may be removed in the future")
     def error(self) -> Error_:
         return Error_(self.raw.error)
 
@@ -319,7 +338,7 @@ class SetResponse_(IterableMessage):
     responses = response
 
     @property
-    @util.deprecated("Field 'error' has been deprecated and may be removed in the future")
+    @deprecated("Field 'error' has been deprecated and may be removed in the future")
     def error(self) -> Error_:
         return Error_(self.raw.error)
 
@@ -340,7 +359,7 @@ class SubscribeResponse_(BaseMessage):
         return Notification_(self.raw.update)
 
     @property
-    @util.deprecated("Field 'error' has been deprecated and may be removed in the future")
+    @deprecated("Field 'error' has been deprecated and may be removed in the future")
     def error(self) -> Error_:
         return Error_(self.raw.error)
 
@@ -392,9 +411,12 @@ class Path_(IterableMessage):
     elems = elem
 
     @property
-    @util.deprecated("Field 'element' has been deprecated and may be removed in the future")
     def element(self) -> Generator[str, None, None]:
+        _err_msg = "Field 'element' has been deprecated and may be removed in the future"
         for e in self.raw.element:
+            if GNMI_NO_DEPRECATED:
+                raise GnmiDeprecationError(_err_msg)
+            warnings.warn(_err_msg, DeprecationWarning, stacklevel=2)
             yield e
     elements = element
 
@@ -414,10 +436,10 @@ class Path_(IterableMessage):
             for key, val in elem.key.items():
                 val = util.escape_string(val, "]")
                 path += "[" + key + "=" + val + "]"
-        
+
         if not path:
             path =  "/" + "/".join(self.element)
-        
+
         if self.origin:
             path = ":".join([self.origin, path])
         return path
