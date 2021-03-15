@@ -104,7 +104,7 @@ def test_gnmi_path():
         pobj = Path_.from_string(path)
         pstr = pobj.to_string()
 
-        [(e.name, e.key) for e in pobj.elements]
+        [(e.name, e.key) for e in pobj.elem]
 
         assert path == pstr
 
