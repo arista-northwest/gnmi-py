@@ -4,9 +4,9 @@
 
 import sys
 
-__version__ = "0.5.2"
+__version__ = "0.5.3"
 
-if sys.version_info < (3, 6):
+if sys.version_info < (3, 7):
     # see: https://devguide.python.org/devcycle/
     raise ValueError("Python 3.6+ is required")
 
