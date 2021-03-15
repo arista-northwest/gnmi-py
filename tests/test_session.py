@@ -70,7 +70,7 @@ def test_set(session):
     path = "/system/config/hostname"
 
     def _get_hostname():
-        return session.get([path]).collect()[0][0].value
+        return session.get([path]).collect()[0][0].get_value()
 
     hostname_ = _get_hostname()
 

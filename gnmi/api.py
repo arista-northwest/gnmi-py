@@ -98,7 +98,7 @@ def get(hostaddr: str,
         prefix = notif.prefix
         for update in notif:
             path = prefix + update.path
-            yield (str(path), update.value)
+            yield (str(path), update.get_value())
 
 
 def subscribe(hostaddr: str,
@@ -139,7 +139,7 @@ def subscribe(hostaddr: str,
             prefix = resp.update.prefix
             for update in resp.update.updates:
                 path = prefix + update.path
-                yield (str(path), update.value)
+                yield (str(path), update.get_value())
     except GrpcDeadlineExceeded:
         pass
 
