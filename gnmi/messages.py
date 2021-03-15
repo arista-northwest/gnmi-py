@@ -69,6 +69,23 @@ class CapabilitiesResponse_(BaseMessage):
         return self.raw.gNMI_version
     version = gnmi_version
 
+@util.deprecated(("Deprecated in favour of using the "
+    "google.golang.org/genproto/googleapis/rpc/status"
+    "message in the RPC response."))
+class Error_(BaseMessage):
+    
+    @property
+    def code(self) -> int:
+        return self.raw.code
+    
+    @property
+    def message(self) -> str:
+        return self.raw.message
+
+    @property
+    def data(self) -> Any:
+        return self.raw.data
+
 class TypedValue_(BaseMessage):
 
     @property
@@ -130,7 +147,7 @@ class Value_(BaseMessage):
 
     def extract_val(self) -> Any:
         val = None
-        if self.type in (pb.JSON_IETF, pb.JSON):
+        if self.type in (pb.JSON_IETF, pb.JSON) and self.raw.value:
             val = json.loads(self.raw.value)
         elif self.type in (pb.BYTES, pb.PROTO):
             val = self.raw.value
@@ -171,7 +188,7 @@ class Update_(BaseMessage):
         return TypedValue_(self.raw.val)
     
     @property
-    @util.deprecated("The 'value' field has been deprecated and may be removed in the future")
+    @util.deprecated("Field 'value' has been deprecated and may be removed in the future")
     def value(self):
         return Value_(self.raw.value)
     
@@ -200,7 +217,7 @@ class Update_(BaseMessage):
         else:
             type_ = cls._TYPED_VALUE_MAP.get(type(value))
             if not type_:
-                raise ValueError("Invalid type: %s for %s" % type(value), str(value))
+                raise ValueError(f"Invalid type: {type(value)} for {value.raw}")
             func = cls._TYPE_HANDLER_MAP[type_]
         
         setattr(typed_value, type_, func(value))
@@ -238,12 +255,17 @@ class GetResponse_(IterableMessage):
 
     def __iter__(self):
         return self.notification
-    
+
     @property
     def notification(self):
         for notification in self.raw.notification:
             yield Notification_(notification)
     notifications = notification
+        
+    @property
+    @util.deprecated("Field 'error' has been deprecated and may be removed in the future")
+    def error(self) -> Error_:
+        return Error_(self.raw.error)
 
 class UpdateResult_(BaseMessage):
     _OPERATION = [
@@ -267,11 +289,24 @@ class UpdateResult_(BaseMessage):
     def path(self):
         return Path_(self.raw.path)
 
+    @property
+    @util.deprecated(("Deprecated timestamp for the UpdateResult, this field has been "
+        "replaced by the timestamp within the SetResponse message, since "
+        "all mutations effected by a set should be applied as a single "
+        "transaction."))
+    def timestamp(self) -> int:
+        return self.raw.timestamp
+
+    @property
+    @util.deprecated("Field 'error' has been deprecated and may be removed in the future")
+    def error(self) -> Error_:
+        return Error_(self.raw.error)
+
 class SetResponse_(IterableMessage):
 
     def __iter__(self):
         return self.response
-    
+
     @property
     def timetamp(self):
         pass
@@ -282,6 +317,11 @@ class SetResponse_(IterableMessage):
             yield UpdateResult_(resp)
 
     responses = response
+
+    @property
+    @util.deprecated("Field 'error' has been deprecated and may be removed in the future")
+    def error(self) -> Error_:
+        return Error_(self.raw.error)
 
 class SubscribeResponse_(BaseMessage):
     r"""Represents a gnmi.SubscribeResponse message
@@ -298,6 +338,11 @@ class SubscribeResponse_(BaseMessage):
     @property
     def update(self):
         return Notification_(self.raw.update)
+
+    @property
+    @util.deprecated("Field 'error' has been deprecated and may be removed in the future")
+    def error(self) -> Error_:
+        return Error_(self.raw.error)
 
 class PathElem_(BaseMessage):
     r"""Represents a gnmi.PathElem message
@@ -347,7 +392,7 @@ class Path_(IterableMessage):
     elems = elem
 
     @property
-    @util.deprecated("The 'element' field has been deprecated and may be removed in the future")
+    @util.deprecated("Field 'element' has been deprecated and may be removed in the future")
     def element(self) -> Generator[str, None, None]:
         for e in self.raw.element:
             yield e
