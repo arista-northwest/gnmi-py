@@ -4,7 +4,7 @@ import time
 import json
 import gnmi.proto.gnmi_pb2 as pb
 from google.protobuf import any_pb2
-from gnmi.util import escape_string, extract_value
+from gnmi.util import escape_string
 from gnmi.messages import Path_, Update_
 
 @pytest.fixture()
@@ -73,26 +73,26 @@ def test_escape_string():
     str_ = r"[key=et/1/1]"
     assert escape_string(str_, "/[]=") == r"\[key\=et\/1\/1\]"
 
-def test_extract_value_invalid(gnmi_path):
-    with pytest.raises(ValueError):
-        extract_value(None)
+# def test_extract_value_invalid(gnmi_path):
+#     with pytest.raises(ValueError):
+#         extract_value(None)
 
-    # class _InvalidValue(object):
+#     class _InvalidValue(object):
 
-    #     def HasField(self, type_):
-    #         return False
+#         def HasField(self, type_):
+#             return False
 
-    # upd = pb.Update(
-    #     path=gnmi_path,
-    #     val=_InvalidValue,
-    #     duplicates=0
-    # )
+#     upd = pb.Update(
+#         path=gnmi_path,
+#         val=_InvalidValue,
+#         duplicates=0
+#     )
 
-    # with pytest.raises(ValueError):
-    #     extract_value(upd)
+#     with pytest.raises(ValueError):
+#         extract_value(upd)
 
-def test_extract_value(gnmi_update):
-    assert extract_value(gnmi_update)
+# def test_extract_value(gnmi_update):
+#     assert extract_value(gnmi_update)
 
 def test_gnmi_path():
     paths = [
