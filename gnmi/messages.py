@@ -17,7 +17,7 @@ import re
 import warnings
 
 from abc import ABCMeta, abstractmethod
-from typing import Any, Generator, List, Optional, Tuple
+from typing import Any, Generator, List, Optional, Tuple, Union
 
 import google.protobuf as _
 import grpc
@@ -200,26 +200,24 @@ class Update_(BaseMessage):
         return Path_(self.raw.path)
 
     @property
-    def val(self):
-        return TypedValue_(self.raw.val)
+    def val(self) -> Optional[TypedValue_]:
+        if self.raw.HasField('val'):
+            return TypedValue_(self.raw.val)
     
     @property
-    @deprecated("Field 'value' has been deprecated and may be removed in the future")
-    def value(self):
-        return Value_(self.raw.value)
+    def value(self) -> Optional[Value_]:
+        if self.raw.HasField('value'):
+            return Value_(self.raw.value)
     
     @property
     def duplicates(self):
         return self.raw.duplicates
 
-    def get_value(self):
-        try:
+    def get_value(self) -> Union[TypedValue_, Value_]:
+        if self.val:
             return self.val.extract_val()
-        except ValueError:
-            if not GNMI_NO_DEPRECATED:
-                return self.value.extract_val()
-            else:
-                raise
+        elif self.value:
+            return self.value.extract_val()
 
     @classmethod
     def from_keyval(cls, keyval: Tuple[str, Any], forced_type: str = ""):
@@ -261,7 +259,7 @@ class Notification_(IterableMessage):
         return self.raw.timestamp
 
     @property
-    def update(self):
+    def update(self) -> Generator[Update_, None, None]:
         for u in self.raw.update:
             yield Update_(u)
 
@@ -282,9 +280,9 @@ class GetResponse_(IterableMessage):
     notifications = notification
         
     @property
-    @deprecated("Field 'error' has been deprecated and may be removed in the future")
     def error(self) -> Error_:
-        return Error_(self.raw.error)
+        if self.raw.HasField('error'):
+            return Error_(self.raw.error)
 
 class UpdateResult_(BaseMessage):
     _OPERATION = [
@@ -317,9 +315,9 @@ class UpdateResult_(BaseMessage):
         return self.raw.timestamp
 
     @property
-    @deprecated("Field 'error' has been deprecated and may be removed in the future")
-    def error(self) -> Error_:
-        return Error_(self.raw.error)
+    def error(self) -> Optional[Error_]:
+        if self.raw.HasField('error'):
+            return Error_(self.raw.error)
 
 class SetResponse_(IterableMessage):
 
@@ -338,9 +336,9 @@ class SetResponse_(IterableMessage):
     responses = response
 
     @property
-    @deprecated("Field 'error' has been deprecated and may be removed in the future")
-    def error(self) -> Error_:
-        return Error_(self.raw.error)
+    def error(self) -> Optional[Error_]:
+        if self.raw.HasField('error'):
+            return Error_(self.raw.error)
 
 class SubscribeResponse_(BaseMessage):
     r"""Represents a gnmi.SubscribeResponse message
@@ -359,9 +357,9 @@ class SubscribeResponse_(BaseMessage):
         return Notification_(self.raw.update)
 
     @property
-    @deprecated("Field 'error' has been deprecated and may be removed in the future")
-    def error(self) -> Error_:
-        return Error_(self.raw.error)
+    def error(self) -> Optional[Error_]:
+        if self.raw.HasField('error'):
+            return Error_(self.raw.error)
 
 class PathElem_(BaseMessage):
     r"""Represents a gnmi.PathElem message
@@ -412,11 +410,9 @@ class Path_(IterableMessage):
 
     @property
     def element(self) -> Generator[str, None, None]:
-        _err_msg = "Field 'element' has been deprecated and may be removed in the future"
         for e in self.raw.element:
-            if GNMI_NO_DEPRECATED:
-                raise GnmiDeprecationError(_err_msg)
-            warnings.warn(_err_msg, DeprecationWarning, stacklevel=2)
+            warnings.warn("Field 'element' has been deprecated and may be removed in the future",
+                DeprecationWarning, stacklevel=2)
             yield e
     elements = element
 
