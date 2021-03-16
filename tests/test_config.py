@@ -20,12 +20,12 @@ prefix = "/system/processes"
 type = "all"
 """
 
-gnmi.environments.RC_PATH = "./examples"
+gnmi.environments.GNMI_RC_PATH = "./examples"
 
 def test_load_rc():
     rc = load_rc()
     d = rc.dump()
-    pprint(d)
+    #pprint(d)
 
 def test_config_load():
     conf = Config.load(GNMI_CONFIG_FILE)
@@ -50,11 +50,11 @@ def test_len():
 
 def test_dump():
     conf = Config.loads(CONFIG_DATA)
-    print(conf)
+    #print(conf)
     d = conf.dump()
-    pprint(d)
+    #pprint(d)
 
 def test_merge():
     rc = load_rc()
     conf = Config.loads(CONFIG_DATA)
-    pprint(conf.merge(rc))
+    #pprint(conf.merge(rc))
