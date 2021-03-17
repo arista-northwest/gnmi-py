@@ -95,10 +95,8 @@ def get(hostaddr: str,
     
     responses = sess.get(paths, options=options)
     for notif in responses:
-        prefix = notif.prefix
         for update in notif:
-            path = prefix + update.path
-            yield (str(path), update.get_value())
+            yield(update)
 
 
 def subscribe(hostaddr: str,
@@ -136,10 +134,8 @@ def subscribe(hostaddr: str,
 
     try:
         for resp in sess.subscribe(paths, options=options):
-            prefix = resp.update.prefix
             for update in resp.update.updates:
-                path = prefix + update.path
-                yield (str(path), update.get_value())
+                yield(update)
     except GrpcDeadlineExceeded:
         pass
 

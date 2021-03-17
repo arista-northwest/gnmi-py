@@ -3,7 +3,7 @@ import os
 from functools import partial
 import pytest
 
-from gnmi.messages import CapabilitiesResponse_, GetResponse_
+from gnmi.messages import CapabilitiesResponse_, GetResponse_, Update_
 from gnmi.exceptions import GrpcDeadlineExceeded
 from gnmi import capabilites, get, delete, replace, update, subscribe
 
@@ -24,10 +24,10 @@ def test_get(is_secure, certificates):
     gen = get(GNMI_TARGET, paths=["/system/config/hostname"],
         secure=is_secure, certificates=certificates, auth=GNMI_AUTH)
 
-    for resp in gen:
-        path, value = resp
-        assert path == "/system/config/hostname"
-        assert isinstance(value, str)
+    for update in gen:
+        #path, value = resp
+        assert str(update.path) == "/system/config/hostname"
+        assert isinstance(update, Update_)
 
 def test_subscribe(is_secure, certificates):
     gen = subscribe(GNMI_TARGET,
@@ -36,8 +36,8 @@ def test_subscribe(is_secure, certificates):
         options={"timeout": 2})
     
     seen = {}
-    for resp in gen:
-        path, _ = resp
+    for update in gen:
+        path = str(update.path)
         if path.startswith("/system/processes/process"): 
             seen["/system/processes/process"] = True
 
@@ -55,9 +55,8 @@ def test_set(is_secure, certificates, request):
     def _get_hostname():
         gen = get(GNMI_TARGET, ["/system/config/hostname"], secure=is_secure,
             certificates=certificates, auth=GNMI_AUTH)
-        for resp in gen:
-            _, value = resp        
-            return value
+        for update in gen:      
+            return update.get_value()
     
     hostname = _get_hostname()
     
