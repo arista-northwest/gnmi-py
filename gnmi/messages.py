@@ -280,7 +280,7 @@ class GetResponse_(IterableMessage):
     notifications = notification
         
     @property
-    def error(self) -> Error_:
+    def error(self) -> Optional[Error_]:
         if self.raw.HasField('error'):
             return Error_(self.raw.error)
 
