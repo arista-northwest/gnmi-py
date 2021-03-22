@@ -152,7 +152,7 @@ def main():
     target: Target = (host, int(port))
 
     if args.debug_grpc:
-        util.enable_debuging()
+        util.enable_grpc_debuging()
 
     sess = Session(target, metadata=config.metadata)
 
