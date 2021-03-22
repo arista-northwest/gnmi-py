@@ -23,11 +23,9 @@ class Options(TypedDict, total=False):
     encoding: str
     extension: list
 
-
 class GetOptions(Options, total=False):
     type: str
     use_models: list
-
 
 class SubscribeOptions(Options, total=False):
     aggregate: bool
@@ -39,7 +37,6 @@ class SubscribeOptions(Options, total=False):
     suppress: bool
     timeout: Optional[int]
     use_alias: bool
-
 
 class GrpcOptions(TypedDict, total=False):
     server_host_override: str
