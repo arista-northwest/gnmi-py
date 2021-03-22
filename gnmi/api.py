@@ -75,8 +75,11 @@ def get(hostaddr: str,
 
     Usage::
 
-        >>> get("veos1:6030", ["/system/config"],
+        >>> respones = get("veos1:6030", ["/system/config"],
         ...     auth=("admin", "p4ssw0rd"))
+        ...
+        >>> for update in respones:
+        ...     print(update.path, update.get_value())
 
     :param target: gNMI target
     :type target: str
@@ -114,8 +117,8 @@ def subscribe(hostaddr: str,
         >>> responses = subscribe("veos1:6030", ["/system/processes/process"],
         ...     auth=("admin", "p4ssw0rd"))s
         ...
-        >>> for path, val in responses:
-        ...     print(path, val)
+        >>> for update in responses:
+        ...     print(update.path, update.get_value())
 
     :param target: gNMI target
     :type target: str
