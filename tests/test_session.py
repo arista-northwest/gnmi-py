@@ -53,6 +53,8 @@ def test_sub(session, paths):
     
     with pytest.raises(GrpcDeadlineExceeded) as exc:
         for resp in session.subscribe(paths, options={"timeout": 2}):
+            if resp.sync_response:
+                continue
             prefix = resp.update.prefix
             for update in resp.update.updates:
                 path = prefix + update.path
@@ -81,14 +83,14 @@ def test_set(session):
     with pytest.raises(GrpcError) as err:
         rsps = session.set(replacements=invalid)
     
-    #assert rsps.collect()[0].op == "INVALID"
+    #assert rsps.collect()[0].op.name == "INVALID"
 
     replacements = [
         ("/system/config/hostname", "minemeow"),
     ]
     
     rsps = session.set(replacements=replacements)
-    assert rsps.collect()[0].op == "REPLACE"
+    assert rsps.collect()[0].op.name == "REPLACE"
 
     _ = session.get(["/system/config/hostname"])
 
@@ -99,7 +101,7 @@ def test_set(session):
     ]
 
     rsps = session.set(updates=updates)
-    assert rsps.collect()[0].op == "UPDATE"
+    assert rsps.collect()[0].op.name == "UPDATE"
 
     assert _get_hostname() == hostname_
 
