@@ -370,14 +370,11 @@ class SubscribeResponse_(BaseMessage):
     
     @property
     def sync_response(self) -> bool:
-        return self.raw.sync_response if self.raw.HasField('sync_response') else False
+        return self.raw.sync_response
 
     @property
-    def update(self) -> Optional[Notification_]:
-        notif = None
-        if self.raw.HasField('update'):
-            notif =  Notification_(self.raw.update)
-        return notif
+    def update(self) -> Notification_:
+        return Notification_(self.raw.update)
     notification = update
 
     @property
@@ -409,8 +406,6 @@ class SetResponse_(IterableMessage):
     def error(self) -> Optional[Error_]:
         if self.raw.HasField('error'):
             return Error_(self.raw.error)
-
-
 
 class UpdateResult_(BaseMessage):
 
