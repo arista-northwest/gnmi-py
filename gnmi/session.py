@@ -14,7 +14,7 @@ import google.protobuf as _
 from gnmi.proto import gnmi_pb2 as pb  # type: ignore
 from gnmi.proto import gnmi_pb2_grpc  # type: ignore
 
-from typing import Generator, Optional, Iterator
+from typing import Generator, Optional, Union
 
 import ssl
 
@@ -95,19 +95,21 @@ class Session(object):
         
         return update.raw
     
-    def _parse_path(self, path):
-        if not path:
-            path = Path_.from_string(path)
-        elif isinstance(path, Path_):
-            path = path
-        elif isinstance(path, str):
-            path = Path_.from_string(path)
+    def _parse_path(self, path: Optional[Union[Path_, pb.Path, str, list, tuple]]) -> pb.Path:
+
+        if path is None:
+            path = ""
         elif isinstance(path, (list, tuple)):
-            path = Path_.from_string("/".join(path))
+            path = "/".join(list(path))
+        
+        if isinstance(path, str):
+            return Path_.from_string(path).raw
+        elif isinstance(path, Path_):
+            return path.raw
+        elif isinstance(path, pb.Path):
+            return path
         else:
             raise ValueError("Failed to parse path: %s" % str(path))
-        
-        return path.raw
     
     def capabilities(self) -> CapabilitiesResponse_:
         r"""Discover capabilities of the target
@@ -320,19 +322,13 @@ class Session(object):
             yield pb.SubscribeRequest(subscribe=sub_list)
 
         try:
-            responses = self._stub.Subscribe(_sr(), timeout, metadata=self.metadata)
-            for response in responses:
-                if response.HasField("sync_response"):
-                    yield SubscribeResponse_(response)
-                elif response.HasField("update"):
-                    yield SubscribeResponse_(response)
-                else:
-                    raise ValueError("Unknown response: " + str(response))
-
+            for r in self._stub.Subscribe(_sr(), timeout, metadata=self.metadata):
+                yield SubscribeResponse_(r)
         except grpc.RpcError as rpcerr:
             status = Status_.from_call(rpcerr)
 
-            # server sometimes sends: gnmi.exceptions.GrpcError: StatusCode.UNKNOWN: context deadline exceeded
+            # server sometimes sends: 
+            #    gnmi.exceptions.GrpcError: StatusCode.UNKNOWN: context deadline exceeded
             if status.code.name == "DEADLINE_EXCEEDED" or status.details == "context deadline exceeded":
                 raise GrpcDeadlineExceeded(status)
             else:
