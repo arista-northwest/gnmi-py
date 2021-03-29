@@ -3,8 +3,8 @@
 # Arista Networks, Inc. Confidential and Proprietary.
 
 import argparse
+import json
 import os
-from pprint import pprint
 import signal
 import sys
 
@@ -12,6 +12,7 @@ from grpc import __version__ as grpc_version
 from google.protobuf import __version__ as pb_version
 
 from gnmi.config import Config
+from gnmi.messages import Notification_
 from gnmi.session import Session
 from gnmi.structures import GetOptions, SubscribeOptions, Target
 from gnmi.exceptions import GrpcDeadlineExceeded
@@ -25,9 +26,8 @@ def signal_handler(signal, frame):
 signal.signal(signal.SIGINT, signal_handler)
 
 def format_version():
-    elems = (os.path.basename(__file__), gnmi.__version__,
-             pb_version, grpc_version)
-    return "%s %s [protobuf %s, grpcio %s]" % elems
+    elems = (gnmi.__version__, pb_version, grpc_version)
+    return "gnmipy %s [protobuf %s, grpcio %s]" % elems
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -37,7 +37,7 @@ def parse_args():
     parser.add_argument("target", help="gNMI gRPC server")
     parser.add_argument("operation", type=str, choices=['capabilities', 'get', 'subscribe'],
         help="gNMI operation [capabilities, get, subscribe]")
-    parser.add_argument("paths", nargs="+")
+    parser.add_argument("paths", nargs="*", default=[])
 
     parser.add_argument("-c", "--config", type=str, default=None,
         help="Path to gNMI config file")
@@ -141,6 +141,41 @@ def make_config(args) -> Config:
 
     return Config(data)
 
+def write_notification(n: Notification_):
+    notif = {}
+
+    updates = []
+    for u in n.update:
+        updates.append({
+            "path": str(u.path),
+            "value": u.get_value()
+        })
+
+    deletes = []
+    for d in n.delete:
+        deletes.append({
+            "path": str(d)
+        })
+
+    if n.atomic:
+        notif["atomic"] = True
+    
+    prefix = str(n.prefix)
+    if prefix:
+        notif["prefix"] = prefix
+
+    if n.timestamp:
+        notif["timestamp"] = n.timestamp
+        notif["time"] = n.time.isoformat()
+
+    if updates:
+        notif["updates"] = updates
+
+    if deletes:
+        notif["deletes"] = deletes
+
+    print(json.dumps(notif, separators=[", ", ": "], indent=2))
+
 def main():
     args = parse_args()
     config: Config
@@ -159,32 +194,30 @@ def main():
     if config.get("Capabilities"):
         response = sess.capabilities()
         print("gNMI Version: %s" % response.gnmi_version)
-        print("Encodings: %s" % str(response.supported_encodings))
+        print("Encodings: %s" % ", ".join([i.name for i in response.supported_encodings]))
         print("Models:")
         for model in response.supported_models:
             print("  %s" % model["name"])
             print("    Version:      %s" % model["version"] or "n/a")
             print("    Organization: %s" % model["organization"])
+    
     elif config.get("Get") and config["Get"].paths:
         options: GetOptions = config.Get.options
         paths = config.Get.paths
         response = sess.get(paths, options)
         for notif in response:
-            prefix = notif.prefix
-            for update in notif.updates:
-                print("%s = %s" % (prefix + update.path, update.get_value()))
+            write_notification(notif)
+
     elif config.get("Subscribe") and config["Subscribe"].paths:
         sub_opts: SubscribeOptions = config.Subscribe.options
         paths = config.Subscribe.paths
         try:
             for resp in sess.subscribe(paths, options=sub_opts):
-                if args.once and resp.sync_response:
-                    break
-                prefix = resp.update.prefix
-                for update in resp.update.updates:
-                    path = prefix + update.path
-                    print(str(path), update.get_value())
-
+                if resp.sync_response:
+                    if args.once:
+                        break
+                    continue
+                write_notification(resp.update)
         except GrpcDeadlineExceeded:
             return
 
