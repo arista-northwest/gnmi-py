@@ -2,6 +2,8 @@
 # Copyright (c) 2020 Arista Networks, Inc.  All rights reserved.
 # Arista Networks, Inc. Confidential and Proprietary.
 
+from gnmi.proto.gnmi_pb2 import Path
+from gnmi.messages import Notification_, Update_, Path_
 from gnmi.exceptions import GrpcDeadlineExceeded
 from typing import Any, List, Tuple
 
@@ -11,7 +13,6 @@ from gnmi.structures import Options, SubscribeOptions, Target, GrpcOptions
 
 
 __all__ = ["capabilites", "delete", "get", "replace", "subscribe", "update"]
-
 
 def _new_session(hostaddr: str,
         auth: Auth = None,
@@ -77,9 +78,11 @@ def get(hostaddr: str,
 
         >>> respones = get("veos1:6030", ["/system/config"],
         ...     auth=("admin", "p4ssw0rd"))
-        ...
-        >>> for update in respones:
-        ...     print(update.path, update.get_value())
+        >>> for notif in respones:
+        ...     for update in notif.updates:
+        ...         print(update.path, update.get_value())
+        ...     for path in notif.deletes:
+        ...         print(str(path)) 
 
     :param target: gNMI target
     :type target: str
@@ -96,10 +99,9 @@ def get(hostaddr: str,
     """
     sess = _new_session(hostaddr, auth, secure, certificates, override)
     
-    responses = sess.get(paths, options=options)
-    for notif in responses:
-        for update in notif:
-            yield(update)
+    resp = sess.get(paths, options=options)
+    for notif in resp.notification:
+        yield notif
 
 
 def subscribe(hostaddr: str,
@@ -108,7 +110,7 @@ def subscribe(hostaddr: str,
         secure: bool = False,
         certificates: CertificateStore = {},
         override: str = None,
-        options: SubscribeOptions = {}):
+        options: SubscribeOptions = {}) -> Notification_:
     """
     Subscribe to updates from target
 
@@ -117,8 +119,12 @@ def subscribe(hostaddr: str,
         >>> responses = subscribe("veos1:6030", ["/system/processes/process"],
         ...     auth=("admin", "p4ssw0rd"))s
         ...
-        >>> for update in responses:
-        ...     print(update.path, update.get_value())
+        >>> for resp in responses:
+        ...     for update in resp.update:
+        ...         for update in update.updates:
+        ...             print(update.path, update.get_value())
+        ...         for path in update.deletes:
+        ...             print(str(path))  
 
     :param target: gNMI target
     :type target: str
@@ -137,8 +143,8 @@ def subscribe(hostaddr: str,
 
     try:
         for resp in sess.subscribe(paths, options=options):
-            for update in resp.update.updates:
-                yield(update)
+            yield resp.update
+
     except GrpcDeadlineExceeded:
         pass
 
