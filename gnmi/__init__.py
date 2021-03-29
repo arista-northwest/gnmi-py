@@ -4,7 +4,7 @@
 
 import sys
 
-__version__ = "0.5.4"
+__version__ = "0.6.0"
 
 if sys.version_info < (3, 7):
     # see: https://devguide.python.org/devcycle/
