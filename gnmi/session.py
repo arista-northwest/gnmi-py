@@ -14,7 +14,7 @@ import google.protobuf as _
 from gnmi.proto import gnmi_pb2 as pb  # type: ignore
 from gnmi.proto import gnmi_pb2_grpc  # type: ignore
 
-from typing import Optional, Iterator
+from typing import Generator, Optional, Iterator
 
 import ssl
 
@@ -242,7 +242,7 @@ class Session(object):
         return response
 
     def subscribe(self, paths: list,
-            options: SubscribeOptions = {}) -> Iterator[SubscribeResponse_]:
+            options: SubscribeOptions = {}) -> Generator[SubscribeResponse_, None, None]:
         r"""Subscribe to state updates from the target
 
         Usage::
@@ -265,7 +265,7 @@ class Session(object):
             In [61]: try: 
                 ...:     for resp in responses: 
                 ...:         prefix = resp.update.prefix 
-                ...:         for update in resp.update.updates: 
+                ...:         for update in resp.update: 
                 ...:             path = prefix + update.path 
                 ...:             print(str(path), update.value) 
                 ...: except GrpcDeadlineExceeded: 
@@ -313,13 +313,11 @@ class Session(object):
             subs.append(sub)
 
         def _sr():
-
             sub_list = pb.SubscriptionList(prefix=prefix, mode=mode,
                                            allow_aggregation=aggregate,
                                            encoding=encoding, subscription=subs,
                                            use_aliases=use_alias, qos=qos)
-            req_iter = pb.SubscribeRequest(subscribe=sub_list)
-            yield req_iter
+            yield pb.SubscribeRequest(subscribe=sub_list)
 
         try:
             responses = self._stub.Subscribe(_sr(), timeout, metadata=self.metadata)
