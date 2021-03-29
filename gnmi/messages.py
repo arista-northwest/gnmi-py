@@ -19,7 +19,7 @@ import enum
 from abc import ABCMeta, abstractmethod
 from datetime import datetime
 from decimal import Decimal
-from typing import Any, Generator, List, Optional, Tuple, Union
+from typing import Any, Dict, Generator, List, Optional, Tuple, Union
 
 import google.protobuf as _
 import grpc
@@ -56,7 +56,7 @@ class IterableMessage(BaseMessage):
     def __iter__(self):
         return iter([])
 
-    def collect(self):
+    def collect(self) -> list:
         """Collect"""
         collected = []
         for item in self:
@@ -88,7 +88,7 @@ class Notification_(IterableMessage):
 
     @property
     def time(self) -> datetime:
-        return datetime.fromtimestamp(self.timestamp // 1000000000)
+        return util.datetime_from_int64(self.timestamp)
         
     @property
     def update(self) -> Generator['Update_', None, None]:
@@ -125,7 +125,7 @@ class Update_(BaseMessage):
     }
     
     @property
-    def path(self):
+    def path(self) -> 'Path_':
         return Path_(self.raw.path)
 
     @property
@@ -139,7 +139,7 @@ class Update_(BaseMessage):
             return Value_(self.raw.value)
     
     @property
-    def duplicates(self):
+    def duplicates(self) -> int:
         return self.raw.duplicates
 
     def get_value(self) -> Union['TypedValue_', 'Value_']:
@@ -149,7 +149,7 @@ class Update_(BaseMessage):
             return self.value.extract_val()
 
     @classmethod
-    def from_keyval(cls, keyval: Tuple[str, Any], forced_type: str = ""):
+    def from_keyval(cls, keyval: Tuple[str, Any], forced_type: str = "") -> 'Update_':
         path, value = keyval
 
         path = Path_.from_string(path)
@@ -256,14 +256,14 @@ class Path_(IterableMessage):
     elements = element
 
     @property
-    def origin(self):
+    def origin(self) -> str:
         return self.raw.origin
     
     @property
-    def target(self):
+    def target(self) -> str:
         return self.raw.target
 
-    def to_string(self):
+    def to_string(self) -> str:
 
         path = ""
         for elem in self.elem:
@@ -280,7 +280,7 @@ class Path_(IterableMessage):
         return path
     
     @classmethod
-    def from_string(cls, path):
+    def from_string(cls, path: str) -> 'Path_':
 
         if not path:
             return cls(pb.Path(origin=None, elem=[])) # type: ignore
@@ -306,40 +306,38 @@ class PathElem_(BaseMessage):
     """
     
     @property
-    def key(self):
+    def key(self) -> Dict[str, str]:
         if hasattr(self.raw, "key"):
             return self.raw.key 
         return {}
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self.raw.name
 
 @deprecated("Message 'Value' is deprecated and may be removed in the future")
 class Value_(BaseMessage):
 
     @property
-    def value(self):
+    def value(self) -> Any:
         return self.extract_val()
 
     @property
-    def type(self):
-        return self.raw.type
+    def type(self) -> 'Encoding_':
+        return Encoding_(self.raw.type)
 
     def __str__(self):
         return str(self.extract_val())
 
     def extract_val(self) -> Any:
-        val = None
-        if self.type in (pb.JSON_IETF, pb.JSON) and self.raw.value:
-            val = json.loads(self.raw.value)
-        elif self.type in (pb.BYTES, pb.PROTO):
-            val = self.raw.value
-        elif self.type == pb.ASCII:
-            val = str(self.raw.value)
-        else:
-            raise ValueError("Unhandled type of value %s" % str(val))
-        return val
+        if self.type.name in ('JSON_IETF', 'JSON') and self.raw.value:
+            return json.loads(self.raw.value)
+        elif self.type.name in ('BYTES', 'PROTO'):
+            return self.raw.value
+        elif self.type.name == 'ASCII':
+            return str(self.raw.value)
+        
+        raise ValueError("Unhandled type of value %s" % str(self.raw.value))
 
 class Encoding_(enum.Enum):
     JSON = 0
@@ -372,11 +370,14 @@ class SubscribeResponse_(BaseMessage):
     
     @property
     def sync_response(self) -> bool:
-        return self.raw.sync_response
+        return self.raw.sync_response if self.raw.HasField('sync_response') else False
 
     @property
-    def update(self):
-        return Notification_(self.raw.update)
+    def update(self) -> Optional[Notification_]:
+        notif = None
+        if self.raw.HasField('update'):
+            notif =  Notification_(self.raw.update)
+        return notif
     notification = update
 
     @property
@@ -390,8 +391,12 @@ class SetResponse_(IterableMessage):
         return self.response
 
     @property
-    def timetamp(self):
-        pass
+    def timetamp(self) -> int:
+        return self.raw.timestamp
+
+    @property
+    def time(self) -> datetime:
+        return util.datetime_from_int64(self.timestamp)
 
     @property
     def response(self):
@@ -405,30 +410,26 @@ class SetResponse_(IterableMessage):
         if self.raw.HasField('error'):
             return Error_(self.raw.error)
 
-# class Operation_(enum.Enum):
-#     "INVALID" = 0
-#     "DELETE" = 1
-#     "REPLACE" = 2
-#     "UPDATE" = 3
+
 
 class UpdateResult_(BaseMessage):
-    _OPERATION = [
-        "INVALID",
-        "DELETE",
-        "REPLACE",
-        "UPDATE"
-    ]
+
+    class Operation_(enum.Enum):
+        INVALID = 0
+        DELETE = 1
+        REPLACE = 2
+        UPDATE = 3
     
     def __str__(self):
         return "%s %s" % (self.operation, self.path)
     
     @property
-    def op(self):
-        return self._OPERATION[self.raw.op]
+    def op(self) -> enum.Enum:
+        return self.Operation_(self.raw.op)
     operation = op
     
     @property
-    def path(self):
+    def path(self) -> Path_:
         return Path_(self.raw.path)
 
     @property
@@ -453,7 +454,7 @@ class GetResponse_(IterableMessage):
         return self.notification
 
     @property
-    def notification(self):
+    def notification(self) -> Generator[Notification_, None, None]:
         for notification in self.raw.notification:
             yield Notification_(notification)
     notifications = notification
@@ -469,7 +470,7 @@ class CapabilitiesResponse_(BaseMessage):
     """
 
     @property
-    def supported_models(self):
+    def supported_models(self) -> Generator[dict, None, None]:
         for model in self.raw.supported_models:
             yield {
                 "name": model.name,
@@ -479,12 +480,12 @@ class CapabilitiesResponse_(BaseMessage):
     models = supported_models
 
     @property
-    def supported_encodings(self):
+    def supported_encodings(self) -> List[Encoding_]:
         return [Encoding_(i) for i in self.raw.supported_encodings]
     encodings = supported_encodings
 
     @property
-    def gnmi_version(self):
+    def gnmi_version(self) -> str:
         return self.raw.gNMI_version
     version = gnmi_version
 
@@ -492,5 +493,5 @@ class Status_(collections.namedtuple('Status_',
         ('code', 'details', 'trailing_metadata')), grpc.Status):
     
     @classmethod
-    def from_call(cls, call):
+    def from_call(cls, call) -> 'Status_':
         return cls(call.code(), call.details(), call.trailing_metadata())
