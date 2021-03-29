@@ -2,6 +2,7 @@
 # Copyright (c) 2020 Arista Networks, Inc.  All rights reserved.
 # Arista Networks, Inc. Confidential and Proprietary.
 
+import datetime
 import os
 import re
 import pathlib
@@ -93,3 +94,6 @@ def escape_string(string: str, escape: list) -> str:
             result += "\\"
         result += character
     return result
+
+def datetime_from_int64(timestamp: int) -> datetime:
+    return datetime.datetime.fromtimestamp(timestamp // 1000000000)
