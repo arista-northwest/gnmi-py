@@ -95,33 +95,25 @@ gnmipy veos1:6030 subscribe /interfaces
 ## API
 
 ```python
-from gnmi.session import Session
+from gnmi.structures import SubscribeOptions
+from gnmi import capabilites, get, delete, replace, update, subscribe
 from gnmi.exceptions import GrpcDeadlineExceeded
 
+paths = ["/system"]
+target = "veos:6030"
 
-metadata = [
-    ("username", "admin"),
-    ("password", "")
-]
-
-
-paths = ["/config", "/memory/state"]
-target = ("veos", 6030)
-sess = Session(target, metadata=metadata)
-
-
-for notif in sess.get(paths, options={"prefix": "/system"}):
+for notif in get(target, paths, auth=("admin", "")):
     prefix = notif.prefix
     for update in notif.updates:
-        path = prefix + update.path
-        print(path, update.get_value())
+        print(f"{prefix + update.path} = {update.get_value()}")
+    for delete in notif.deletes:
+        print(f"{prefix + delete} = DELETED")
 
-paths = ["/system/processes/process"]
-try:
-    for resp in sess.subscribe(paths, options={"timeout": 5}):
-        prefix = resp.update.prefix
-        for update in resp.update.updates:
-            path = prefix + update.path
-            print(str(path), update.get_value())
-except GrpcDeadlineExceeded:
-    print("User defined timeout exceeded.")
+for notif in subscribe(target, paths, auth=("admin", ""),
+                       options=SubscribeOptions(mode="once")):
+    prefix = notif.prefix
+    for update in notif.updates:
+        print(f"{prefix + update.path} = {update.get_value()}")
+    for delete in notif.deletes:
+        print(f"{prefix + delete} = __DELETED__")
+```
