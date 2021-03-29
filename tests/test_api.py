@@ -1,9 +1,12 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) 2021 Arista Networks, Inc.  All rights reserved.
+# Arista Networks, Inc. Confidential and Proprietary.
 
 import os
 from functools import partial
 import pytest
 
-from gnmi.messages import CapabilitiesResponse_, GetResponse_, Update_
+from gnmi.messages import CapabilitiesResponse_, GetResponse_, Path_, Update_
 from gnmi.exceptions import GrpcDeadlineExceeded
 from gnmi import capabilites, get, delete, replace, update, subscribe
 
@@ -21,42 +24,48 @@ def test_discover(is_secure, certificates):
 
 def test_get(is_secure, certificates):
 
-    gen = get(GNMI_TARGET, paths=["/system/config/hostname"],
+    resp = get(GNMI_TARGET, paths=["/system/config/hostname"],
         secure=is_secure, certificates=certificates, auth=GNMI_AUTH)
 
-    for update in gen:
-        #path, value = resp
-        assert str(update.path) == "/system/config/hostname"
-        assert isinstance(update, Update_)
+    for notif in resp:
+        for update in notif.update:
+            assert str(update.path) == "/system/config/hostname"
+            assert isinstance(update.get_value(), str)
 
 def test_subscribe(is_secure, certificates):
-    gen = subscribe(GNMI_TARGET,
+    resp = subscribe(GNMI_TARGET,
         paths=["/system/processes/process", "/interfaces/interface"],
         secure=is_secure, certificates=certificates, auth=GNMI_AUTH,
         options={"timeout": 2})
     
     seen = {}
-    for update in gen:
-        path = str(update.path)
-        if path.startswith("/system/processes/process"): 
-            seen["/system/processes/process"] = True
+    for notif in resp:
+        for u in notif:
+            if isinstance(u, Update_):
+                path = str(u.path)
+                if path.startswith("/system/processes/process"): 
+                    seen["/system/processes/process"] = True
 
-        if path.startswith("/interfaces/interface"):
-            seen["/interfaces/interface"] = True
+                if path.startswith("/interfaces/interface"):
+                    seen["/interfaces/interface"] = True
+
+            elif isinstance(u, Path_):
+                print(f"DELETED: {path}")
 
     assert "/system/processes/process" in seen.keys()
     assert "/interfaces/interface" in seen.keys()
 
 
 def test_set(is_secure, certificates, request):
-    
+     
     path = "/system/config/hostname"
     
     def _get_hostname():
-        gen = get(GNMI_TARGET, ["/system/config/hostname"], secure=is_secure,
+        resp = get(GNMI_TARGET, ["/system/config/hostname"], secure=is_secure,
             certificates=certificates, auth=GNMI_AUTH)
-        for update in gen:      
-            return update.get_value()
+        for notif in resp:
+            for update in notif:
+                return update.get_value()
     
     hostname = _get_hostname()
     
