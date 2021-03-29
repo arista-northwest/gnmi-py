@@ -3,9 +3,9 @@
 # Arista Networks, Inc. Confidential and Proprietary.
 
 from gnmi.proto.gnmi_pb2 import Path
-from gnmi.messages import Notification_, Update_, Path_
+from gnmi.messages import Notification_, SetResponse_, Update_, Path_
 from gnmi.exceptions import GrpcDeadlineExceeded
-from typing import Any, List, Tuple
+from typing import Any, Generator, List, Tuple
 
 from gnmi.session import Session
 from gnmi.structures import Auth, CertificateStore, GetOptions, Metadata
@@ -70,7 +70,7 @@ def get(hostaddr: str,
         secure: bool = False,
         certificates: CertificateStore = {},
         override: str = None,
-        options: GetOptions = {}):
+        options: GetOptions = {}) -> Generator[Notification_, None, None]:
     """
     Get path(s) from target
 
@@ -98,9 +98,8 @@ def get(hostaddr: str,
     :type options: gnmi.structures.GetOptions
     """
     sess = _new_session(hostaddr, auth, secure, certificates, override)
-    
-    resp = sess.get(paths, options=options)
-    for notif in resp.notification:
+
+    for notif in sess.get(paths, options=options):
         yield notif
 
 
@@ -110,7 +109,7 @@ def subscribe(hostaddr: str,
         secure: bool = False,
         certificates: CertificateStore = {},
         override: str = None,
-        options: SubscribeOptions = {}) -> Notification_:
+        options: SubscribeOptions = {}) -> Generator[Notification_, None, None]:
     """
     Subscribe to updates from target
 
@@ -143,6 +142,8 @@ def subscribe(hostaddr: str,
 
     try:
         for resp in sess.subscribe(paths, options=options):
+            if resp.sync_response:
+                continue
             yield resp.update
 
     except GrpcDeadlineExceeded:
@@ -155,7 +156,7 @@ def delete(hostaddr: str,
         secure: bool = False,
         certificates: CertificateStore = {},
         override: str = None,
-        options: Options = {}):
+        options: Options = {}) -> SetResponse_:
     """
     Delete paths from the target
 
@@ -187,7 +188,7 @@ def replace(hostaddr: str,
         secure: bool = False,
         certificates: CertificateStore = {},
         override: str = None,
-        options: Options = {}):
+        options: Options = {}) -> SetResponse_:
     """
     Replace paths on the target
 
@@ -219,7 +220,7 @@ def update(hostaddr: str,
         secure: bool = False,
         certificates: CertificateStore = {},
         override: str = None,
-        options: Options = {}):
+        options: Options = {}) -> SetResponse_:
     """
     Update paths on the target
 
