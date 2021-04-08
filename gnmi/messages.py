@@ -9,6 +9,7 @@ gNMI messags wrappers
 
 """
 
+import base64
 import collections
 import functools
 import itertools
@@ -188,7 +189,7 @@ class TypedValue_(BaseMessage):
         elif self.raw.HasField("bool_val"):
             val = self.raw.bool_val
         elif self.raw.HasField("bytes_val"):
-            val = self.raw.bytes_val
+            val = base64.b64encode(self.raw.bytes_val)
         elif self.raw.HasField("decimal_val"):
             val = self.raw.decimal_val
             val = Decimal(str(val.digits / 10**val.precision))
@@ -333,7 +334,7 @@ class Value_(BaseMessage):
         if self.type.name in ('JSON_IETF', 'JSON') and self.raw.value:
             return json.loads(self.raw.value)
         elif self.type.name in ('BYTES', 'PROTO'):
-            return self.raw.value
+            return base64.b64encode(self.raw.value)
         elif self.type.name == 'ASCII':
             return str(self.raw.value)
         
