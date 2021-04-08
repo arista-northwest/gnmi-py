@@ -146,9 +146,14 @@ def write_notification(n: Notification_):
 
     updates = []
     for u in n.update:
+        
+        val = u.get_value()
+        if isinstance(val, bytes):
+            val = val.decode("utf-8")
+
         updates.append({
             "path": str(u.path),
-            "value": u.get_value()
+            "value": val
         })
 
     deletes = []
@@ -173,8 +178,9 @@ def write_notification(n: Notification_):
 
     if deletes:
         notif["deletes"] = deletes
-
-    print(json.dumps(notif, separators=[", ", ": "], indent=2))
+    
+    #print(notif)
+    print(json.dumps(notif)) #, separators=[", ", ": "], indent=2))
 
 def main():
     args = parse_args()
