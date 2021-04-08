@@ -88,7 +88,11 @@ Subscribe options:
 #### Command-line
 
 ```bash
-gnmipy veos1:6030 subscribe /interfaces
+gnmipy -u admin veos1:6030 subscribe /interfaces
+
+# using jq to filter results
+gimpy -u admin veos1:6030 subscribe /system | \
+  jq '{time: .time, path: (.prefix + .updates[].path), value: .updates[].value}'
 ```
 
 
