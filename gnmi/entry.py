@@ -84,6 +84,7 @@ def parse_args():
                        help="DSCP value to be set on transmitted telemetry")
 
     group.add_argument("--use-alias", action="store_true", help="use aliases")
+    group.add_argument("--insecure", action="store_true", help="disable TLS")
 
 
     return parser.parse_args()
@@ -195,7 +196,7 @@ def main():
     if args.debug_grpc:
         util.enable_grpc_debuging()
 
-    sess = Session(target, metadata=config.metadata)
+    sess = Session(target, metadata=config.metadata, insecure=args.insecure)
 
     if config.get("Capabilities"):
         response = sess.capabilities()

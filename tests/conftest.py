@@ -6,7 +6,7 @@ import pytest
 
 import gnmi.structures
 
-GNMI_SECURE: bool = True if os.environ.get("GNMI_SECURE") else False
+GNMI_INSECURE: bool = True if os.environ.get("GNMI_INSECURE") else False
 GNMI_TARGET: str = os.environ.get("GNMI_TARGET", "")
 GNMI_USER: str = os.environ.get("GNMI_USER", "admin")
 GNMI_PASS: str = os.environ.get("GNMI_PASS", "")

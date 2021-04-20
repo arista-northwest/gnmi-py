@@ -1,6 +1,6 @@
 import os
 import pytest
-from tests.conftest import GNMI_PASS, GNMI_TARGET, GNMI_SECURE, GNMI_USER
+from tests.conftest import GNMI_PASS, GNMI_TARGET, GNMI_INSECURE, GNMI_USER
 from gnmi.session import Session
 from gnmi.messages import Path_, Update_
 from gnmi.exceptions import GrpcError, GrpcDeadlineExceeded
@@ -27,13 +27,13 @@ def session(target, certificates):
         "username": GNMI_USER,
         "password": GNMI_PASS
     }
-    if GNMI_SECURE:
-        secure = True
+    if GNMI_INSECURE:
+        insecure = True
     else:
-        secure = False
+        insecure = False
     
     #print(certificates)
-    return Session(target, secure=secure, certificates=certificates, metadata=metadata)
+    return Session(target, insecure=insecure, certificates=certificates, metadata=metadata)
 
 def test_cap(session):
     resp = session.capabilities()

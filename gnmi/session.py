@@ -42,14 +42,14 @@ class Session(object):
     def __init__(self,
                  target: Target,
                  metadata: Metadata = {},
-                 secure: bool = False,
+                 insecure: bool = False,
                  certificates: CertificateStore = {},
                  grpc_options: GrpcOptions = {}):
 
        
         self._certificates = certificates
         self._grpc_options = list(grpc_options.items())
-        self._secure = secure
+        self._insecure = insecure
         self.target = target
         self.metadata = util.prepare_metadata(metadata)
 
@@ -66,7 +66,7 @@ class Session(object):
         private_key: Optional[bytes]
         chain: Optional[bytes]
 
-        if not self._secure:
+        if self._insecure:
             return grpc.insecure_channel(self.hostaddr)
 
         if not self._certificates.get("root_certificates"):
