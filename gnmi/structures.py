@@ -14,7 +14,7 @@ Target = Tuple[str, int]
 Metadata = Dict[str, Any]
 
 class CertificateStore(TypedDict, total=False):
-    certificat_chain: bytes
+    certificate_chain: bytes
     private_key: bytes
     root_certificates: bytes
 

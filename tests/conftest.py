@@ -26,7 +26,7 @@ def certificates():
         client_key = fh.read().encode()
 
     return gnmi.structures.CertificateStore(
-        certificat_chain=client_cert,
+        certificate_chain=client_cert,
         private_key=client_key,
         root_certificates=root_cert,
     )
@@ -34,4 +34,4 @@ def certificates():
 
 @pytest.fixture(scope="session")
 def is_secure():
-    return GNMI_SECURE
+    return not GNMI_INSECURE

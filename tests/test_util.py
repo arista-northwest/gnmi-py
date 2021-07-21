@@ -8,7 +8,7 @@ from gnmi import util
 
 #     if "certificates" in rc:
 #         for k, v in rc["certificates"].items():
-#             assert k in ("certificat_chain", "private_key", "root_certificates")
+#             assert k in ("certificate_chain", "private_key", "root_certificates")
     
 #     if "get" in rc:
 #         assert rc["get"]["options"]["encoding"]

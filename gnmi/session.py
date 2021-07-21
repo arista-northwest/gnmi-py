@@ -62,26 +62,22 @@ class Session(object):
         return "%s:%d" % self.target
 
     def _new_channel(self):
-        root_cert: bytes
-        private_key: Optional[bytes]
-        chain: Optional[bytes]
-
+        
         if self._insecure:
             return grpc.insecure_channel(self.hostaddr)
 
-        if not self._certificates.get("root_certificates"):
-            root_cert = ssl.get_server_certificate(self.target).encode()
-        else:
-            root_cert = self._certificates["root_certificates"]
-
-        chain = self._certificates.get("certificat_chain") or None
+        # if not self._certificates.get("root_certificates"):
+        #     root_cert = ssl.get_server_certificate(self.target).encode()
+        # else:
+        root_cert = self._certificates.get("root_certificates") or None
+        chain = self._certificates.get("certificate_chain") or None
         private_key = self._certificates.get("private_key") or None
 
         creds = grpc.ssl_channel_credentials(
                 root_certificates=root_cert,
                 private_key=private_key,
                 certificate_chain=chain)
-
+    
         return grpc.secure_channel(self.hostaddr, creds,
             options=self._grpc_options)
     

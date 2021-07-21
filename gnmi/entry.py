@@ -14,7 +14,7 @@ from google.protobuf import __version__ as pb_version
 from gnmi.config import Config
 from gnmi.messages import Notification_
 from gnmi.session import Session
-from gnmi.structures import GetOptions, SubscribeOptions, Target
+from gnmi.structures import CertificateStore, GetOptions, GrpcOptions, SubscribeOptions, Target
 from gnmi.exceptions import GrpcDeadlineExceeded
 from gnmi import util
 import gnmi
@@ -84,6 +84,10 @@ def parse_args():
                        help="DSCP value to be set on transmitted telemetry")
 
     group.add_argument("--use-alias", action="store_true", help="use aliases")
+
+    group.add_argument("--tls-ca", default="", type=str, help="")
+    group.add_argument("--tls-cert", default="", type=str, help="")
+    group.add_argument("--tls-key", default="", type=str, help="")
     group.add_argument("--insecure", action="store_true", help="disable TLS")
 
 
@@ -167,6 +171,7 @@ def write_notification(n: Notification_):
         notif["atomic"] = True
     
     prefix = str(n.prefix)
+    
     if prefix:
         notif["prefix"] = prefix
 
@@ -196,7 +201,27 @@ def main():
     if args.debug_grpc:
         util.enable_grpc_debuging()
 
-    sess = Session(target, metadata=config.metadata, insecure=args.insecure)
+    cs = CertificateStore()
+    if args.tls_ca != "":
+        tls_ca = b""
+        tls_cert = b""
+        tls_key = b""
+
+        with open(args.tls_ca, "rb") as fh:
+            tls_ca = fh.read()
+        with open(args.tls_cert, "rb") as fh:
+            tls_cert = fh.read()
+        with open(args.tls_key, "rb") as fh:
+            tls_key = fh.read()
+
+        cs = CertificateStore(
+            root_certificates=tls_ca,
+            certificate_chain=tls_cert,
+            private_key=tls_key
+        )
+ 
+    sess = Session(target, metadata=config.metadata, insecure=args.insecure,
+        certificates=cs) #, grpc_options= GrpcOptions(server_host_override=host))
 
     if config.get("Capabilities"):
         response = sess.capabilities()

@@ -42,10 +42,9 @@ def main():
 
         for e in prefix.element:
             results.append((str(prefix), type(prefix.raw).__name__, "element"))
-            break
+            # break
 
         if sr.error:
-            # deprecated error field/message
             results.append((str(prefix), type(sr.raw).__name__, "error"))
 
         for update in sr.update.updates:
@@ -54,12 +53,13 @@ def main():
             for e in path.element:
                 results.append((str(path), type(path.raw).__name__, "element"))
                 break
+            
             if update.value:
                 results.append((str(path), type(update.raw).__name__, "value"))
             
             #print(str(path), update.get_value())
 
     for l in results:
-        print(f"{l[0]},{l[1]},{l[2]}")
+        print(f"{l[0]}\t{l[1]}\t{l[2]}")
 if __name__ == "__main__":
     main()
