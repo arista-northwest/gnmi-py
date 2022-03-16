@@ -3,9 +3,8 @@
 # Arista Networks, Inc. Confidential and Proprietary.
 
 import argparse
-from collections import OrderedDict
 from gnmi.session import Session
-from gnmi.structures import SubscribeOptions, Target
+from gnmi.structures import Target
 
 from pprint import pprint
 
