@@ -8,7 +8,7 @@ __version__ = "0.7.0"
 
 if sys.version_info < (3, 7):
     # see: https://devguide.python.org/devcycle/
-    raise ValueError("Python 3.6+ is required")
+    raise ValueError("Python 3.7+ is required")
 
 from gnmi.session import Session
 from gnmi.api import capabilites, delete, get, replace, subscribe, update
