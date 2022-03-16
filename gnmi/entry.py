@@ -90,7 +90,10 @@ def parse_args():
     group.add_argument("--tls-key", default="", type=str, help="")
     group.add_argument("--insecure", action="store_true", help="disable TLS")
 
-
+    group.add_argument("--host-override", default=None,
+        help="Override gRPC server hostname")
+    #group.add_argument("--tls-no-verify", action="store_true", help="")
+    
     return parser.parse_args()
 
 def make_config(args) -> Config:
@@ -219,9 +222,13 @@ def main():
             certificate_chain=tls_cert,
             private_key=tls_key
         )
- 
+
+    grpc_options={}
+    # if args.tls_no_verify:
+    #     grpc_options["ssl.server_host_override"] = host
+
     sess = Session(target, metadata=config.metadata, insecure=args.insecure,
-        certificates=cs) #, grpc_options= GrpcOptions(server_host_override=host))
+        certificates=cs, grpc_options=grpc_options)
 
     if config.get("Capabilities"):
         response = sess.capabilities()

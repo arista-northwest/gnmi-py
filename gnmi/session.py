@@ -48,7 +48,7 @@ class Session(object):
 
        
         self._certificates = certificates
-        self._grpc_options = list(grpc_options.items())
+        self._grpc_options = grpc_options
         self._insecure = insecure
         self.target = target
         self.metadata = util.prepare_metadata(metadata)
@@ -62,24 +62,25 @@ class Session(object):
         return "%s:%d" % self.target
 
     def _new_channel(self):
-        
         if self._insecure:
             return grpc.insecure_channel(self.hostaddr)
 
-        # if not self._certificates.get("root_certificates"):
-        #     root_cert = ssl.get_server_certificate(self.target).encode()
-        # else:
-        root_cert = self._certificates.get("root_certificates") or None
-        chain = self._certificates.get("certificate_chain") or None
-        private_key = self._certificates.get("private_key") or None
+        if not self._certificates.get("root_certificates"):
+            
+            creds = grpc.ssl_channel_credentials(
+                ssl.get_server_certificate(self.target).encode())
+        else:
+            root_cert = self._certificates.get("root_certificates") or None
+            chain = self._certificates.get("certificate_chain") or None
+            private_key = self._certificates.get("private_key") or None
 
-        creds = grpc.ssl_channel_credentials(
-                root_certificates=root_cert,
-                private_key=private_key,
-                certificate_chain=chain)
+            creds = grpc.ssl_channel_credentials(
+                    root_certificates=root_cert,
+                    private_key=private_key,
+                    certificate_chain=chain)
     
         return grpc.secure_channel(self.hostaddr, creds,
-            options=self._grpc_options)
+            options=list(self._grpc_options.items()))
     
     def _build_update(self, update):
         if isinstance(update, (Update_, Path_)):
