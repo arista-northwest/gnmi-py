@@ -2,10 +2,11 @@
 # Copyright (c) 2020 Arista Networks, Inc.  All rights reserved.
 # Arista Networks, Inc. Confidential and Proprietary.
 
+from gnmi.credentials import SSLCredentials
 from gnmi.proto.gnmi_pb2 import Path
 from gnmi.messages import Notification_, SetResponse_, Update_, Path_
 from gnmi.exceptions import GrpcDeadlineExceeded
-from typing import Any, Generator, List, Tuple
+from typing import Any, Generator, List, Tuple, Optional
 
 from gnmi.session import Session
 from gnmi.structures import Auth, CertificateStore, GetOptions, Metadata
@@ -17,7 +18,7 @@ __all__ = ["capabilites", "delete", "get", "replace", "subscribe", "update"]
 def _new_session(hostaddr: str,
         auth: Auth = None,
         secure: bool = False,
-        certificates: CertificateStore = {},
+        certificates: SSLCredentials = {},
         override: str = None):
     
     host, port = hostaddr.split(":")
@@ -42,7 +43,7 @@ def _new_session(hostaddr: str,
 def capabilites(hostaddr: str, 
         auth: Auth = None,
         secure: bool = False,
-        certificates: CertificateStore = {},
+        certificates: Optional[SSLCredentials] = None,
         override: str = None):
     """
     Get supported models and encodings from target
@@ -68,7 +69,7 @@ def get(hostaddr: str,
         paths: list,
         auth: Auth = None,
         secure: bool = False,
-        certificates: CertificateStore = {},
+        certificates: Optional[SSLCredentials] = None,
         override: str = None,
         options: GetOptions = {}) -> Generator[Notification_, None, None]:
     """
@@ -107,8 +108,8 @@ def subscribe(hostaddr: str,
         paths: list,
         auth: Auth = None,
         secure: bool = False,
-        certificates: CertificateStore = {},
-        override: str = None,
+        certificates: Optional[SSLCredentials] = None,
+        override: Optional[str] = None,
         options: SubscribeOptions = {}) -> Generator[Notification_, None, None]:
     """
     Subscribe to updates from target
@@ -154,7 +155,7 @@ def delete(hostaddr: str,
         deletes: List[str] = [],
         auth: Auth = None,
         secure: bool = False,
-        certificates: CertificateStore = {},
+        certificates: Optional[SSLCredentials] = None,
         override: str = None,
         options: Options = {}) -> SetResponse_:
     """
@@ -186,7 +187,7 @@ def replace(hostaddr: str,
         replacements: List[Tuple[str, Any]] = [],
         auth: Auth = None,
         secure: bool = False,
-        certificates: CertificateStore = {},
+        certificates: Optional[SSLCredentials] = None,
         override: str = None,
         options: Options = {}) -> SetResponse_:
     """
@@ -218,7 +219,7 @@ def update(hostaddr: str,
         updates: List[Tuple[str, Any]] = [],
         auth: Auth = None,
         secure: bool = False,
-        certificates: CertificateStore = {},
+        certificates: Optional[SSLCredentials] = None,
         override: str = None,
         options: Options = {}) -> SetResponse_:
     """

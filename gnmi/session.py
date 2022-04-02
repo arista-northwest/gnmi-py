@@ -10,23 +10,22 @@ Implementation if gnmi.session API
 """
 
 import grpc
-import google.protobuf as _
-from gnmi.proto import gnmi_pb2 as pb  # type: ignore
-from gnmi.proto import gnmi_pb2_grpc  # type: ignore
+import ssl
 
 from typing import Generator, Optional, Union
 
-import ssl
+import google.protobuf as _
 
 from gnmi import util
+from gnmi.constants import DEFAULT_GRPC_PORT, MODE_MAP, DATA_TYPE_MAP
+from gnmi.credentials import SSLCredentials
+from gnmi.exceptions import GrpcError, GrpcDeadlineExceeded
+from gnmi.proto import gnmi_pb2_grpc, gnmi_pb2 as pb  # type: ignore
 from gnmi.messages import CapabilitiesResponse_, GetResponse_, Path_, Status_
 from gnmi.messages import Update_
 from gnmi.messages import SubscribeResponse_, SetResponse_
-from gnmi.structures import Metadata, Target, CertificateStore, Options
+from gnmi.structures import Metadata, Target, Options
 from gnmi.structures import GetOptions, GrpcOptions, SubscribeOptions
-from gnmi.constants import DEFAULT_GRPC_PORT, MODE_MAP, DATA_TYPE_MAP
-from gnmi.exceptions import GrpcError, GrpcDeadlineExceeded
-
 
 class Session(object):
     r"""Represents a gNMI session
@@ -43,10 +42,11 @@ class Session(object):
                  target: Target,
                  metadata: Metadata = {},
                  insecure: bool = False,
-                 certificates: CertificateStore = {},
+                 certificates: Optional[SSLCredentials] = None,
                  grpc_options: GrpcOptions = {}):
 
        
+        
         self._certificates = certificates
         self._grpc_options = grpc_options
         self._insecure = insecure
@@ -65,22 +65,20 @@ class Session(object):
         if self._insecure:
             return grpc.insecure_channel(self.hostaddr)
 
-        if not self._certificates.get("root_certificates"):
-            
+        if not self._certificates.root_certificates:
             creds = grpc.ssl_channel_credentials(
                 ssl.get_server_certificate(self.target).encode())
         else:
-            root_cert = self._certificates.get("root_certificates") or None
-            chain = self._certificates.get("certificate_chain") or None
-            private_key = self._certificates.get("private_key") or None
+            root_cert = self._certificates.root_certificates or None
+            chain = self._certificates.certificate_chain or None
+            private_key = self._certificates.private_key or None
 
             creds = grpc.ssl_channel_credentials(
                     root_certificates=root_cert,
                     private_key=private_key,
                     certificate_chain=chain)
-    
         return grpc.secure_channel(self.hostaddr, creds,
-            options=list(self._grpc_options.items()))
+            options=tuple(self._grpc_options.items()))
     
     def _build_update(self, update):
         if isinstance(update, (Update_, Path_)):
@@ -92,7 +90,9 @@ class Session(object):
         
         return update.raw
     
-    def _parse_path(self, path: Optional[Union[Path_, pb.Path, str, list, tuple]]) -> pb.Path:
+    def _parse_path(
+        self, path: Optional[Union[Path_, pb.Path, str, list, tuple]]
+    ) -> pb.Path:
 
         if path is None:
             path = ""
@@ -196,8 +196,9 @@ class Session(object):
 
         return GetResponse_(response)
 
-    def set(self, deletes: list = [], replacements: list = [], updates: list = [],
-            options: Options = {}) -> SetResponse_:
+    def set(self, deletes: list = [], replacements: list = [],
+            updates: list = [], options: Options = {}
+    ) -> SetResponse_:
         r"""Set set, update or delete value from specified path
 
         Usage::
@@ -241,7 +242,8 @@ class Session(object):
         return response
 
     def subscribe(self, paths: list,
-            options: SubscribeOptions = {}) -> Generator[SubscribeResponse_, None, None]:
+            options: SubscribeOptions = {}
+    ) -> Generator[SubscribeResponse_, None, None]:
         r"""Subscribe to state updates from the target
 
         Usage::
