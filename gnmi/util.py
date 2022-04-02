@@ -12,7 +12,7 @@ import google.protobuf as _
 import gnmi.proto.gnmi_pb2 as pb  # type: ignore
 
 from gnmi.environments import GNMI_RC_PATH
-from gnmi.config import Config
+# from gnmi.config import Config
 from gnmi.constants import GNMIRC_FILES
 
 RE_PATH_COMPONENT = re.compile(r'''
@@ -28,14 +28,6 @@ def enable_grpc_debuging() -> NoReturn:
 def get_gnmi_constant(name: str) -> int:
     return getattr(pb, name.replace("-", "_").upper())
 
-def load_rc() -> Config:
-    rc = Config({})
-    path = pathlib.Path(GNMI_RC_PATH)
-    for name in GNMIRC_FILES:
-        fil = path / name
-        if fil.exists():
-            return Config.load(fil)
-    return rc
 
 def parse_duration(duration: str) -> Optional[int]:
 
