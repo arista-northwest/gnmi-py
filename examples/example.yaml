@@ -1,0 +1,25 @@
+options:
+  targets:
+    - gd256:6030
+  username: admin
+  password: ''
+
+command:
+  name: get
+  options:
+    encoding: json
+    type: config
+    paths:
+      - /system/config
+      - /system/processes
+
+# deletes:
+#   - /system/config/motd
+
+# updates:
+#   - ["/system/config/hostname", "str", "testing-gnmi"]
+
+# replacements:
+#   - path: /system/config/hostname
+#     value: testing-gnmi
+#     encoding: json
