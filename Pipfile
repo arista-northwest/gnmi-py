@@ -11,11 +11,13 @@ pytest="*"
 Sphinx="*"
 
 [packages]
+click="*"
 grpcio="*"
-protobuf="*"
 grpcio-tools="*"
-typing-extensions="*"
+protobuf="*"
+pyyaml="*"
 toml="*"
+typing-extensions="*"
 
-# [requires]
-# python_version = "3.7"
+[requires]
+python_version = "3.7"

@@ -25,6 +25,7 @@ setup(
     long_description_content_type='text/markdown',
     py_modules=['gnmi'],
     install_requires=[
+        "click>=8.0",
         "grpcio>=1.28.1",
         "grpcio-tools>=1.28.1",
         "protobuf>=3.11.3",
@@ -49,8 +50,8 @@ setup(
     license = "MIT Licesnse",
     entry_points = {
         'console_scripts': [
-            'gnmipy = gnmi.entry:main',
-            'gimpy = gnmi.entry:main'
+            'gnmipy = gnmi.cli:cli',
+            'gimpy = gnmi.cli:cli'
         ]
     }
 )
