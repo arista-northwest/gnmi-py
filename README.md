@@ -28,57 +28,28 @@ Not supported :)
 
 ```
 % gnmipy --help
-usage: gnmipy [-h] [--version] [-c CONFIG] [-d] [-u USERNAME] [-p PASSWORD]
-              [--encoding {json,bytes,proto,ascii,json-ietf}]
-              [--prefix PREFIX] [--get-type {config,state,operational}]
-              [--interval INTERVAL] [--timeout TIMEOUT]
-              [--heartbeat HEARTBEAT] [--aggregate] [--suppress]
-              [--mode {stream,once,poll}]
-              [--submode {target-defined,on-change,sample}] [--once]
-              [--qos QOS] [--use-alias]
-              target {capabilities,get,subscribe} [paths [paths ...]]
+Usage: gnmipy [OPTIONS] COMMAND [ARGS]...
 
-positional arguments:
-  target                gNMI gRPC server
-  {capabilities,get,subscribe}
-                        gNMI operation [capabilities, get, subscribe]
-  paths
+Options:
+  --debug-grpc             enable grpc debugging
+  --host-override TEXT     override grpc server hostname
+  --insecure               use an insecure grpc chaneel
+  -p, --password TEXT      password for basic authentication
+  -t, --target TARGETTYPE  gnmi server hostaddr and port (<hostaddr>:<port>)
+                           [1<=x<=65535]
+  --tls-ca FILENAME        path to ca file
+  --tls-cert FILENAME      path to cert file
+  --tls-key FILENAME       path to key file
+  -u, --username TEXT
+  -c, --config PATH
+  --help                   Show this message and exit.
 
-optional arguments:
-  -h, --help            show this help message and exit
-  --version             show program's version number and exit
-  -c CONFIG, --config CONFIG
-                        Path to gNMI config file
-
-  -d, --debug           enable gRPC debugging
-
-  -u USERNAME, --username USERNAME
-  -p PASSWORD, --password PASSWORD
-
-Common options:
-  --encoding {json,bytes,proto,ascii,json-ietf}
-                        set encoding
-  --prefix PREFIX       gRPC path prefix (default: <empty>)
-
-Get options:
-  --get-type {config,state,operational}
-
-Subscribe options:
-  --interval INTERVAL   sample interval in milliseconds (default: 10s)
-  --timeout TIMEOUT     subscription duration in seconds (default: None)
-  --heartbeat HEARTBEAT
-                        heartbeat interval in milliseconds (default: None)
-  --aggregate           allow aggregation
-  --suppress            suppress redundant
-  --mode {stream,once,poll}
-                        Specify subscription mode
-  --submode {target-defined,on-change,sample}
-                        subscription sub-mode
-  --once                End subscription after first sync_response. This is a
-                        workaround for implementions that do not support
-                        'once' subscription mode
-  --qos QOS             DSCP value to be set on transmitted telemetry
-  --use-alias           use aliases
+Commands:
+  capabilities
+  get
+  subscribe     subscribe to a gnmi path
+  update
+  version
 ```
 
 

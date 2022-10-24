@@ -25,12 +25,12 @@ setup(
     long_description_content_type='text/markdown',
     py_modules=['gnmi'],
     install_requires=[
-        "click>=8.0",
-        "grpcio>=1.28.1",
+        "click>=8.1.2",
+        "grpcio>=1.44.0",
         "grpcio-tools>=1.28.1",
         "protobuf>=3.11.3",
-        "toml>=0.10.0",
-        "typing-extensions>=3.7.4.2"
+        "toml>=0.10.2",
+        "typing-extensions>=4.1.1"
     ],
     classifiers=[
         'Development Status :: 4 - Beta',

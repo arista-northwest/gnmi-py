@@ -1,0 +1,10 @@
+click==8.1.2
+dacite==1.6.0
+grpc==1.0.0
+grpcio==1.44.0
+keyring==23.9.3
+protobuf==4.21.8
+pytest==7.1.1
+PyYAML==6.0
+setuptools==60.9.3
+typing_extensions==4.4.0

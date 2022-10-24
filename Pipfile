@@ -11,7 +11,9 @@ pytest="*"
 Sphinx="*"
 
 [packages]
+cerberus="*"
 click="*"
+dacite="*"
 grpcio="*"
 grpcio-tools="*"
 protobuf="*"
@@ -20,4 +22,4 @@ toml="*"
 typing-extensions="*"
 
 [requires]
-python_version = "3.7"
+python_version = "3.8"
