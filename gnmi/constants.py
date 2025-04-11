@@ -2,8 +2,7 @@
 # Copyright (c) 2020 Arista Networks, Inc.  All rights reserved.
 # Arista Networks, Inc. Confidential and Proprietary.
 
-from typing import List
-from typing_extensions import Final
+from typing import List, Final
 
 import grpc
 

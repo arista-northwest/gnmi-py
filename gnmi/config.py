@@ -5,7 +5,12 @@
 from collections.abc import Mapping
 from typing import Any
 
-import toml
+import yaml
+
+# try:
+#     import toml
+# except ImportError:
+#     pass
 
 class ConfigElem(Mapping):
 
@@ -78,11 +83,12 @@ class ConfigElem(Mapping):
 class Config(ConfigElem):
     
     @classmethod
-    def load(cls, file):
+    def load_file(cls, file):
         with open(file, "r") as fh:
             data = cls.loads(fh.read())
         return data
     
     @classmethod
-    def loads(cls, text):
-        return cls(toml.loads(text))
+    def load(cls, data: str):
+        loader = yaml.SafeLoader
+        return cls(yaml.safe_load(data))

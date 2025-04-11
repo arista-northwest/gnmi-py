@@ -3,8 +3,7 @@
 # Arista Networks, Inc. Confidential and Proprietary.
 
 from ssl import OP_ALL
-from typing import Dict, Optional, Tuple, Any
-from typing_extensions import TypedDict
+from typing import Dict, Optional, Tuple, Any, TypedDict
 from gnmi.messages import Path_
 
 Auth = Tuple[str, Optional[str]]

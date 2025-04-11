@@ -1,0 +1,21 @@
+metadata:
+    username: "admin"
+    password: ""
+
+Subscribe:
+    paths:
+        - "eos_native:/Kernel/proc/stat/"
+        - "/system/processes/process[pid=*]/state"
+
+    options:
+        aggregate: false
+        encoding: "json"
+        # heartbeat =
+        mode: "on-change"
+        # qos = 0
+        use_aliases: false 
+        # interval =
+        submode: "stream"
+        suppress: false
+        #timeout =
+

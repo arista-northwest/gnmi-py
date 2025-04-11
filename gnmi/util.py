@@ -34,7 +34,7 @@ def load_rc() -> Config:
     for name in GNMIRC_FILES:
         fil = path / name
         if fil.exists():
-            return Config.load(fil)
+            return Config.load_file(fil)
     return rc
 
 def parse_duration(duration: str) -> Optional[int]:

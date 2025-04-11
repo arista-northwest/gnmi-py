@@ -1,0 +1,12 @@
+metadata:
+  username: "admin"
+  password: ""
+
+Get:
+  paths: 
+    - "/process[pid=*]/state"
+
+  options:
+    prefix: "/system/processes"
+    encoding: "json"
+    type: "all"
