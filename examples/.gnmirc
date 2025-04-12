@@ -1,18 +1,19 @@
-[metadata]
-username = "admin"
-password = ""
+metadata:
+    username = "admin"
+    password = ""
 
-[Get.options]
-encoding = "json"
+get:
+    options:
+        encoding: "json"
 
-[Subscribe.options]
-aggregate = false
-encoding = "json"
-# heartbeat =
-mode = "stream"
-# qos = 0
-use_aliases = false 
-# interval =
-submode = "on-change"
-suppress = true
-# timeout =
+subscribe:
+    options:
+        aggregate: false
+        encoding: "json"
+        mode: "stream"
+        submode: "on-change"
+        suppress: true
+        # qos: 0 
+        # interval:
+        # heartbeat:
+        # timeout:

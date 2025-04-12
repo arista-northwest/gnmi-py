@@ -2,7 +2,7 @@ metadata:
   username: "admin"
   password: ""
 
-Get:
+get:
   paths: 
     - "/process[pid=*]/state"
 

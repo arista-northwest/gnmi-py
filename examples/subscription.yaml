@@ -2,7 +2,7 @@ metadata:
     username: "admin"
     password: ""
 
-Subscribe:
+subscribe:
     paths:
         - "eos_native:/Kernel/proc/stat/"
         - "/system/processes/process[pid=*]/state"
@@ -13,7 +13,7 @@ Subscribe:
         # heartbeat =
         mode: "on-change"
         # qos = 0
-        use_aliases: false 
+        #use_aliases: false 
         # interval =
         submode: "stream"
         suppress: false
