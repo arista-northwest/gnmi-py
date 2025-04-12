@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2020 Arista Networks, Inc.  All rights reserved.
+# Copyright (c) 2025 Arista Networks, Inc.  All rights reserved.
 # Arista Networks, Inc. Confidential and Proprietary.
 
 import datetime
 import os
 import re
 import pathlib
+
+from urllib.parse import urlparse, ParseResult
 from typing import Any, Dict, List, NoReturn, Optional, Tuple, Union
 
 import google.protobuf as _

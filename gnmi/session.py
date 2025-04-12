@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2020 Arista Networks, Inc.  All rights reserved.
+# Copyright (c) 2025 Arista Networks, Inc.  All rights reserved.
 # Arista Networks, Inc. Confidential and Proprietary.
 """
 gnmi.session
@@ -22,10 +22,11 @@ from gnmi import util
 from gnmi.messages import CapabilitiesResponse_, GetResponse_, Path_, Status_
 from gnmi.messages import Update_
 from gnmi.messages import SubscribeResponse_, SetResponse_
-from gnmi.structures import Metadata, Target, CertificateStore, Options
+from gnmi.structures import Metadata, CertificateStore, Options
 from gnmi.structures import GetOptions, GrpcOptions, SubscribeOptions
-from gnmi.constants import DEFAULT_GRPC_PORT, MODE_MAP, DATA_TYPE_MAP
+from gnmi.constants import MODE_MAP, DATA_TYPE_MAP
 from gnmi.exceptions import GrpcError, GrpcDeadlineExceeded
+from gnmi.target import Target
 
 
 class Session(object):
@@ -57,18 +58,17 @@ class Session(object):
 
         self._stub = gnmi_pb2_grpc.gNMIStub(self._channel)  # type: ignore
 
-    @property
-    def hostaddr(self):
-        return "%s:%d" % self.target
+    # @property
+    # def hostaddr(self):
+    #     return "%s:%d" % self.target
 
     def _new_channel(self):
         if self._insecure:
-            return grpc.insecure_channel(self.hostaddr)
+            return grpc.insecure_channel(str(self.target))
 
         if not self._certificates.get("root_certificates"):
-            
             creds = grpc.ssl_channel_credentials(
-                ssl.get_server_certificate(self.target).encode())
+                ssl.get_server_certificate(self.target.addr).encode())
         else:
             root_cert = self._certificates.get("root_certificates") or None
             chain = self._certificates.get("certificate_chain") or None
@@ -79,7 +79,7 @@ class Session(object):
                     private_key=private_key,
                     certificate_chain=chain)
     
-        return grpc.secure_channel(self.hostaddr, creds,
+        return grpc.secure_channel(self.addr, creds,
             options=list(self._grpc_options.items()))
     
     def _build_update(self, update):
@@ -112,7 +112,7 @@ class Session(object):
         r"""Discover capabilities of the target
 
         Usage::
-    
+        
             In [3]: resp = sess.capabilities()
 
             In [4]: resp.gnmi_version                                                                      
@@ -315,7 +315,7 @@ class Session(object):
             sub_list = pb.SubscriptionList(prefix=prefix, mode=mode,
                                            allow_aggregation=aggregate,
                                            encoding=encoding, subscription=subs,
-                                           use_aliases=use_alias, qos=qos)
+                                           qos=qos)
             yield pb.SubscribeRequest(subscribe=sub_list)
 
         try:

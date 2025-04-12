@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2020 Arista Networks, Inc.  All rights reserved.
+# Copyright (c) 2025 Arista Networks, Inc.  All rights reserved.
 # Arista Networks, Inc. Confidential and Proprietary.
 
 from gnmi.proto.gnmi_pb2 import Path
@@ -9,19 +9,18 @@ from typing import Any, Generator, List, Tuple
 
 from gnmi.session import Session
 from gnmi.structures import Auth, CertificateStore, GetOptions, Metadata
-from gnmi.structures import Options, SubscribeOptions, Target, GrpcOptions
-
+from gnmi.structures import Options, SubscribeOptions, GrpcOptions
+from gnmi.target import Target
 
 __all__ = ["capabilites", "delete", "get", "replace", "subscribe", "update"]
 
-def _new_session(hostaddr: str,
+def _new_session(target: str,
         auth: Auth = None,
-        secure: bool = False,
+        insecure: bool = False,
         certificates: CertificateStore = {},
         override: str = None):
     
-    host, port = hostaddr.split(":")
-    target: Target = (host, int(port))
+    target = Target.from_url(target)
 
     metadata: Metadata = {}
     if auth:
@@ -36,12 +35,12 @@ def _new_session(hostaddr: str,
         grpc_options["server_host_override"] = override
     
     return Session(target, metadata=metadata, certificates=certificates,
-                secure=secure, grpc_options=grpc_options)
+                insecure=insecure, grpc_options=grpc_options)
 
 
-def capabilites(hostaddr: str, 
+def capabilites(target: str, 
         auth: Auth = None,
-        secure: bool = False,
+        insecure: bool = False,
         certificates: CertificateStore = {},
         override: str = None):
     """
@@ -60,14 +59,14 @@ def capabilites(hostaddr: str,
     :param override: override hostname
     :type override: str
     """
-    sess = _new_session(hostaddr, auth, secure, certificates, override)
+    sess = _new_session(target, auth, insecure, certificates, override)
     return sess.capabilities()
 
 
-def get(hostaddr: str,
+def get(target: str,
         paths: list,
         auth: Auth = None,
-        secure: bool = False,
+        insecure: bool = False,
         certificates: CertificateStore = {},
         override: str = None,
         options: GetOptions = {}) -> Generator[Notification_, None, None]:
@@ -97,16 +96,16 @@ def get(hostaddr: str,
     :param options: Get options
     :type options: gnmi.structures.GetOptions
     """
-    sess = _new_session(hostaddr, auth, secure, certificates, override)
+    sess = _new_session(target, auth, insecure, certificates, override)
 
     for notif in sess.get(paths, options=options):
         yield notif
 
 
-def subscribe(hostaddr: str,
+def subscribe(target: str,
         paths: list,
         auth: Auth = None,
-        secure: bool = False,
+        insecure: bool = False,
         certificates: CertificateStore = {},
         override: str = None,
         options: SubscribeOptions = {}) -> Generator[Notification_, None, None]:
@@ -138,7 +137,7 @@ def subscribe(hostaddr: str,
     :param options: Subscribe options
     :type options: gnmi.structures.SubscribeOptions
     """
-    sess = _new_session(hostaddr, auth, secure, certificates, override)
+    sess = _new_session(target, auth, insecure, certificates, override)
 
     try:
         for resp in sess.subscribe(paths, options=options):
@@ -150,10 +149,10 @@ def subscribe(hostaddr: str,
         pass
 
 
-def delete(hostaddr: str,
+def delete(target: str,
         deletes: List[str] = [],
         auth: Auth = None,
-        secure: bool = False,
+        insecure: bool = False,
         certificates: CertificateStore = {},
         override: str = None,
         options: Options = {}) -> SetResponse_:
@@ -178,14 +177,14 @@ def delete(hostaddr: str,
     :param options: Subscribe options
     :type options: gnmi.structures.SubscribeOptions
     """
-    sess = _new_session(hostaddr, auth, secure, certificates, override)
+    sess = _new_session(target, auth, insecure, certificates, override)
     return sess.set(deletes=deletes, options=options)
 
 
-def replace(hostaddr: str,
+def replace(target: str,
         replacements: List[Tuple[str, Any]] = [],
         auth: Auth = None,
-        secure: bool = False,
+        insecure: bool = False,
         certificates: CertificateStore = {},
         override: str = None,
         options: Options = {}) -> SetResponse_:
@@ -210,14 +209,14 @@ def replace(hostaddr: str,
     :param options: Subscribe options
     :type options: gnmi.structures.SubscribeOptions
     """
-    sess = _new_session(hostaddr, auth, secure, certificates, override)
+    sess = _new_session(target, auth, insecure, certificates, override)
     return sess.set(replacements=replacements, options=options)
 
 
-def update(hostaddr: str,
+def update(target: str,
         updates: List[Tuple[str, Any]] = [],
         auth: Auth = None,
-        secure: bool = False,
+        insecure: bool = False,
         certificates: CertificateStore = {},
         override: str = None,
         options: Options = {}) -> SetResponse_:
@@ -242,5 +241,5 @@ def update(hostaddr: str,
     :param options: Subscribe options
     :type options: gnmi.structures.SubscribeOptions
     """
-    sess = _new_session(hostaddr, auth, secure, certificates, override)
+    sess = _new_session(target, auth, insecure, certificates, override)
     return sess.set(updates=updates, options=options)

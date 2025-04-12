@@ -1,12 +1,19 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2020 Arista Networks, Inc.  All rights reserved.
+# Copyright (c) 2025 Arista Networks, Inc.  All rights reserved.
 # Arista Networks, Inc. Confidential and Proprietary.
 
 from collections.abc import Mapping
 from typing import Any
 
-import yaml
+YAML_SUPPORTED: bool = False
 
+try:
+    import yaml
+    YAML_SUPPORTED = True
+except ImportError:
+    pass
+
+#TOML_SUPPORTED: bool = False
 # try:
 #     import toml
 # except ImportError:
@@ -84,11 +91,15 @@ class Config(ConfigElem):
     
     @classmethod
     def load_file(cls, file):
+        # if not YAML_SUPPORTED:
+        #     raise ValueError("pyyaml module missing")
         with open(file, "r") as fh:
-            data = cls.loads(fh.read())
+            data = cls.load(fh.read())
         return data
     
     @classmethod
     def load(cls, data: str):
-        loader = yaml.SafeLoader
+        if not YAML_SUPPORTED:
+            raise ValueError("pyyaml module missing")
+
         return cls(yaml.safe_load(data))

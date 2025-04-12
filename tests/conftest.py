@@ -33,5 +33,5 @@ def certificates():
 
 
 @pytest.fixture(scope="session")
-def is_secure():
-    return not GNMI_INSECURE
+def is_insecure():
+    return GNMI_INSECURE

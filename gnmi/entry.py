@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2020 Arista Networks, Inc.  All rights reserved.
+# Copyright (c) 2025 Arista Networks, Inc.  All rights reserved.
 # Arista Networks, Inc. Confidential and Proprietary.
 
 import argparse
@@ -14,8 +14,9 @@ from google.protobuf import __version__ as pb_version
 from gnmi.config import Config
 from gnmi.messages import Notification_
 from gnmi.session import Session
-from gnmi.structures import CertificateStore, GetOptions, GrpcOptions, SubscribeOptions, Target
+from gnmi.structures import CertificateStore, GetOptions, GrpcOptions, SubscribeOptions
 from gnmi.exceptions import GrpcDeadlineExceeded
+from gnmi.target import Target
 from gnmi import util
 import gnmi
 
@@ -198,8 +199,7 @@ def main():
 
     config = make_config(args).merge(rc)
 
-    host, port = args.target.split(":")[:2]
-    target: Target = (host, int(port))
+    target = Target.from_url(args.target)
 
     if args.debug_grpc:
         util.enable_grpc_debuging()

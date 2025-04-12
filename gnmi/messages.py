@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2020 Arista Networks, Inc.  All rights reserved.
+# Copyright (c) 2025 Arista Networks, Inc.  All rights reserved.
 # Arista Networks, Inc. Confidential and Proprietary.
 """
 gnmi.messages
@@ -198,9 +198,9 @@ class TypedValue_(BaseMessage):
         elif self.raw.HasField("int_val"):
             val = self.raw.int_val
         elif self.raw.HasField("json_ietf_val"):
-            val = json.loads(self.raw.json_ietf_val)
+            val = json.load(self.raw.json_ietf_val)
         elif self.raw.HasField("json_val"):
-            val = json.loads(self.raw.json_val)
+            val = json.load(self.raw.json_val)
         elif self.raw.HasField("leaflist_val"):
             val = []
             for elem in self.raw.leaflist_val.element:
@@ -332,7 +332,7 @@ class Value_(BaseMessage):
 
     def extract_val(self) -> Any:
         if self.type.name in ('JSON_IETF', 'JSON') and self.raw.value:
-            return json.loads(self.raw.value)
+            return json.load(self.raw.value)
         elif self.type.name in ('BYTES', 'PROTO'):
             return base64.b64encode(self.raw.value)
         elif self.type.name == 'ASCII':

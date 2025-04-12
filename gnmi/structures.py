@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2020 Arista Networks, Inc.  All rights reserved.
+# Copyright (c) 2025 Arista Networks, Inc.  All rights reserved.
 # Arista Networks, Inc. Confidential and Proprietary.
 
 from ssl import OP_ALL
@@ -8,9 +8,8 @@ from gnmi.messages import Path_
 
 Auth = Tuple[str, Optional[str]]
 
-Target = Tuple[str, int]
-
 Metadata = Dict[str, Any]
+
 
 class CertificateStore(TypedDict, total=False):
     certificate_chain: bytes

@@ -4,6 +4,7 @@ from tests.conftest import GNMI_PASS, GNMI_TARGET, GNMI_INSECURE, GNMI_USER
 from gnmi.session import Session
 from gnmi.messages import Path_, Update_
 from gnmi.exceptions import GrpcError, GrpcDeadlineExceeded
+from gnmi.target import Target
 from gnmi import util
 from os import replace
 
@@ -17,9 +18,7 @@ def paths():
 
 @pytest.fixture()
 def target():
-    host, port = GNMI_TARGET.split(":")[:2]
-
-    return (host, int(port))
+    return Target.from_url(GNMI_TARGET)
 
 @pytest.fixture()
 def session(target, certificates):
