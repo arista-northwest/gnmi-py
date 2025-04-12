@@ -5,6 +5,8 @@ setup(
     version="0.3.0",
     author="Jesse Mather",
     author_email="jmather@arista.com",
+    license="MIT",
+    description="gNMI client",
     packages=find_packages(exclude=["tests"]),
     install_requires=[
         "grpcio>=1.71.0",
