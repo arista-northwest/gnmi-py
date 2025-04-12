@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 
 setup(
     name="gnmi-py",
-    version="0.3.0"
+    version="0.3.0",
     author="Jesse Mather",
     author_email="jmather@arista.com",
     packages=find_packages(exclude=["tests"]),
