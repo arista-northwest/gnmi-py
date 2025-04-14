@@ -15,7 +15,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'gnmipy = gnmi:entry.man',
+            'gnmipy = gnmi.entry:main',
         ],
     }
 )
