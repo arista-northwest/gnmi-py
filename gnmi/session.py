@@ -66,7 +66,7 @@ class Session(object):
         if self._insecure:
             return grpc.insecure_channel(str(self.target))
 
-        if not self._certificates.get("root_certificates"):
+        elif not self._certificates.get("root_certificates"):
             creds = grpc.ssl_channel_credentials(
                 ssl.get_server_certificate(self.target.addr).encode())
         else:
