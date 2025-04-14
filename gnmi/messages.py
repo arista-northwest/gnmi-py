@@ -198,9 +198,9 @@ class TypedValue_(BaseMessage):
         elif self.raw.HasField("int_val"):
             val = self.raw.int_val
         elif self.raw.HasField("json_ietf_val"):
-            val = json.load(self.raw.json_ietf_val)
+            val = json.loads(self.raw.json_ietf_val)
         elif self.raw.HasField("json_val"):
-            val = json.load(self.raw.json_val)
+            val = json.loads(self.raw.json_val)
         elif self.raw.HasField("leaflist_val"):
             val = []
             for elem in self.raw.leaflist_val.element:
