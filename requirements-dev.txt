@@ -1,4 +1,0 @@
-grpcio-tools>=1.30.0
-pytest>=8.3.5
-setuptools>=78.1.0
-sphinx>=7.4.7
