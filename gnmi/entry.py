@@ -38,10 +38,18 @@ def parse_args():
     parser.add_argument("target", help="gNMI gRPC server")
     parser.add_argument("operation", type=str, choices=['capabilities', 'get', 'subscribe'],
         help="gNMI operation [capabilities, get, subscribe]")
-    parser.add_argument("paths", nargs="*", default=[])
-
+    parser.add_argument("--pretty", action="store_true", default=False, help="pretty print notifications")
     parser.add_argument("-c", "--config", type=str, default=None,
         help="Path to gNMI config file")
+    
+    parser.add_argument("--use-alias", action="store_true", help="use aliases")
+
+    parser.add_argument("--tls-ca", default="", type=str, help="certificate authority")
+    parser.add_argument("--tls-cert", default="", type=str, help="client certificate")
+    parser.add_argument("--tls-key", default="", type=str, help="client key")
+    parser.add_argument("--insecure", action="store_true", help="disable TLS")
+    parser.add_argument("--host-override", default=None,
+        help="Override gRPC server hostname")
 
     group = parser.add_argument_group()
     group.add_argument("--debug-grpc", action="store_true",
@@ -61,6 +69,9 @@ def parse_args():
 
     group = parser.add_argument_group("Get options")
     group.add_argument("--get-type", type=str, default=None, choices=["config", "state", "operational"])
+    group.add_argument("paths", nargs="*", default=[])
+
+    group = parser.add_argument_group("Replace options")
 
     group = parser.add_argument_group("Subscribe options")
     group.add_argument("--interval", default=None, type=str,
@@ -84,15 +95,6 @@ def parse_args():
     group.add_argument("--qos", default=0, type=int,
                        help="DSCP value to be set on transmitted telemetry")
 
-    group.add_argument("--use-alias", action="store_true", help="use aliases")
-
-    group.add_argument("--tls-ca", default="", type=str, help="")
-    group.add_argument("--tls-cert", default="", type=str, help="")
-    group.add_argument("--tls-key", default="", type=str, help="")
-    group.add_argument("--insecure", action="store_true", help="disable TLS")
-
-    group.add_argument("--host-override", default=None,
-        help="Override gRPC server hostname")
     #group.add_argument("--tls-no-verify", action="store_true", help="")
     
     return parser.parse_args()
@@ -148,9 +150,12 @@ def make_config(args) -> Config:
         if args.use_alias:
             _operation["options"]["use_alias"] = args.use_alias
 
+    elif operation_name == "Replace":
+        pass
+
     return Config(data)
 
-def write_notification(n: Notification_):
+def write_notification(n: Notification_, pretty: bool = False) -> None:
     notif = {}
 
     updates = []
@@ -190,7 +195,10 @@ def write_notification(n: Notification_):
         notif["deletes"] = deletes
     
     #print(notif)
-    print(json.dumps(notif)) #, separators=[", ", ": "], indent=2))
+    if pretty:
+        print(json.dumps(notif, separators=[", ", ": "], indent=2))
+    else:
+        print(json.dumps(notif))
 
 def main():
     args = parse_args()
@@ -224,8 +232,6 @@ def main():
         )
 
     grpc_options={}
-    # if args.tls_no_verify:
-    #     grpc_options["ssl.server_host_override"] = host
 
     sess = Session(target, metadata=config.metadata, insecure=args.insecure,
         certificates=cs, grpc_options=grpc_options)
@@ -245,7 +251,7 @@ def main():
         paths = config.Get.paths
         response = sess.get(paths, options)
         for notif in response:
-            write_notification(notif)
+            write_notification(notif, args.pretty)
 
     elif config.get("Subscribe") and config["Subscribe"].paths:
         sub_opts: SubscribeOptions = config.Subscribe.options
@@ -256,7 +262,7 @@ def main():
                     if args.once:
                         break
                     continue
-                write_notification(resp.update)
+                write_notification(resp.update, args.pretty)
         except GrpcDeadlineExceeded:
             return
 
