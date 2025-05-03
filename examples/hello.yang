@@ -1,0 +1,22 @@
+module hello {
+    yang-version 1;
+    namespace "custom-hello";
+    prefix "hello";
+
+    revision "2015-02-24" {
+        description "Basic Hello World YANG model.";
+    }
+    
+    container hello-world {
+        list messages {
+            key "lang";
+            leaf lang {
+                type string;
+            }
+
+            leaf message {
+                type string;
+            }
+        }
+    }
+}
